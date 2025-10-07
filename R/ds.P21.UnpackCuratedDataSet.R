@@ -1,5 +1,5 @@
 
-#' ds.UnpackCuratedDataSet
+#' ds.P21.UnpackCuratedDataSet
 #'
 #' Make tables within Curated Data Set (\code{list} object) directly addressable in R server sessions
 #'
@@ -13,8 +13,8 @@
 #'
 #' @author Bastian Reiter
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-ds.UnpackCuratedDataSet <- function(CuratedDataSetName = "CuratedDataSet",
-                                    DSConnections = NULL)
+ds.P21.UnpackCuratedDataSet <- function(CuratedDataSetName = "P21.CuratedDataSet",
+                                        DSConnections = NULL)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {
   # Check validity of 'DSConnections' or find them programmatically if none are passed
@@ -26,21 +26,21 @@ ds.UnpackCuratedDataSet <- function(CuratedDataSetName = "CuratedDataSet",
   Messages <- list()
   Messages$Assignment <- list()
 
-  # Get curated CCP table names
-  CCPTableNames_CDS <- dsCCPhosClient::Meta_Tables$TableName_Curated
+  # Get curated P21 table names
+  P21TableNames.CDS <- dsFredaP21Client::Meta.Tables$TableName.Curated
 
-  for(i in 1:length(CCPTableNames_CDS))
+  for(i in 1:length(P21TableNames.CDS))
   {
       # Execute server-side assign function
       DSI::datashield.assign(conns = DSConnections,
-                             symbol = paste0("CDS_", CCPTableNames_CDS[i]),      # E.g. 'CDS_Metastasis'
+                             symbol = paste0("P21.CDS.", P21TableNames.CDS[i]),      # E.g. 'CDS.Metastasis'
                              value = call("ExtractFromListDS",
                                           ListName.S = CuratedDataSetName,
-                                          ObjectName.S = CCPTableNames_CDS[i]))
+                                          ObjectName.S = P21TableNames.CDS[i]))
 
       # Call helper function to check if object assignment succeeded
       Messages$Assignment <- c(Messages$Assignment,
-                               ds.GetObjectStatus(ObjectName = paste0("CDS_", CCPTableNames_CDS[i]),
+                               ds.GetObjectStatus(ObjectName = paste0("P21.CDS.", P21TableNames.CDS[i]),
                                                   DSConnections = DSConnections))
   }
 
