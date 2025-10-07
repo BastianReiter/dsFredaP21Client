@@ -1,5 +1,5 @@
 
-#' ds.CurateData
+#' ds.P21.CurateData
 #'
 #' `r lifecycle::badge("stable")` \cr\cr
 #' Triggers transformation of Raw Data Set (RDS) into Curated Data Set (CDS) on servers.
@@ -11,24 +11,24 @@
 #' @param Settings \code{list} - Settings passed to function
 #'                   \itemize{  \item \emph{DataHarmonization} - \code{list}
 #'                                  \itemize{ \item Run \code{logical} - Whether or not to perform data harmonization - Default: \code{TRUE}
-#'                                            \item Methods \code{data.frame} - Default: \code{dsCCPhos::Set.DataHarmonizationMethods}
-#'                                            \item TransformativeExpressions \code{data.frame} - Default: \code{dsCCPhos::Set.TransformativeExpressions}
+#'                                            \item Methods \code{data.frame} - Default: \code{dsFredaP21::Set.DataHarmonizationMethods}
+#'                                            \item TransformativeExpressions \code{data.frame} - Default: \code{dsFredaP21::Set.TransformativeExpressions}
 #'                                            \item TransformativeExpressions.Profile \code{string} - Profile used in \emph{TransformativeExpressions} - Default: 'Default'
-#'                                            \item Dictionary \code{data.frame} - Default: \code{dsCCPhos::Meta_Dictionary}
+#'                                            \item Dictionary \code{data.frame} - Default: \code{dsFredaP21::Meta_Dictionary}
 #'                                            \item Dictionary.Profile \code{string} - Profile used in \emph{Dictionary} - Default: 'Default'
-#'                                            \item FuzzyStringMatching \code{data.frame} - Default: \code{dsCCPhos::Meta_FuzzyStringMatching}
+#'                                            \item FuzzyStringMatching \code{data.frame} - Default: \code{dsFredaP21::Meta_FuzzyStringMatching}
 #'                                            \item FuzzyStringMatching.Profile \code{string} - Profile used in \emph{FuzzyStringMatching} - Default: 'Default'}
 #'                              \item \emph{FeatureObligations} - \code{list}
-#'                                  \itemize{ \item RuleSet \code{data.frame} - Default: \code{dsCCPhos::Meta_FeatureObligations}
+#'                                  \itemize{ \item RuleSet \code{data.frame} - Default: \code{dsFredaP21::Meta_FeatureObligations}
 #'                                            \item RuleSet.Profile \code{string} - Profile name defining strict and trans-feature rules for obligatory feature content. Profile name must be stated in \code{FeatureObligations$RuleSet} - Default: 'Default'}
 #'                              \item \emph{FeatureTracking} - \code{list}
-#'                                  \itemize{ \item RuleSet \code{data.frame} - Default: \code{dsCCPhos::Meta_FeatureTracking}
+#'                                  \itemize{ \item RuleSet \code{data.frame} - Default: \code{dsFredaP21::Meta_FeatureTracking}
 #'                                            \item RuleSet.Profile \code{string} - Profile name defining which features should be tracked/monitored during curation process. Profile name must be stated in \code{FeatureTracking$RuleSet} - Default: 'Default'}
 #'                              \item \emph{TableCleaning} - \code{list}
 #'                                  \itemize{ \item Run \code{logical} - Whether or not to perform table cleaning (removal of redundant and ineligible entries) - Default: \code{TRUE}}
 #'                              \item \emph{TableNormalization} - \code{list}
 #'                                  \itemize{ \item Run \code{logical} - Whether or not to perform table normalization - Default: \code{TRUE}
-#'                                            \item RuleSet \code{data.frame} - Default: \code{dsCCPhos::Meta_TableNormalization}
+#'                                            \item RuleSet \code{data.frame} - Default: \code{dsFredaP21::Meta_TableNormalization}
 #'                                            \item RuleSet.Profile \code{string} - Profile name defining rule set to be used for table normalization. Profile name must be stated in \code{TableNormalization$RuleSet} - Default: 'Default'}}
 #'
 #' @param RunAssignmentChecks \code{logical} Indicating whether assignment checks should be performed or omitted for reduced execution time - Default: \code{TRUE}
@@ -73,19 +73,19 @@
 #'
 #' @author Bastian Reiter
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-ds.CurateData <- function(RawDataSetName = "RawDataSet",
-                          OutputName = "CurationOutput",
-                          Settings = NULL,
-                          # Settings = list(DataHarmonization = list(Run = TRUE,
-                          #                                          TransformativeExpressions.Profile = "Default",
-                          #                                          Dictionary.Profile = "Default",
-                          #                                          FuzzyStringMatching.Profile = "Default"),
-                          #                 FeatureObligations = list(RuleSet.Profile = "Default"),
-                          #                 FeatureTracking = list(RuleSet.Profile = "Default")),
-                          #--- Secondary Arguments ---
-                          RunAssignmentChecks = TRUE,
-                          UnpackCuratedDataSet = TRUE,
-                          DSConnections = NULL)
+ds.P21.CurateData <- function(RawDataSetName = "P21.RawDataSet",
+                              OutputName = "P21.CurationOutput",
+                              Settings = NULL,
+                              # Settings = list(DataHarmonization = list(Run = TRUE,
+                              #                                          TransformativeExpressions.Profile = "Default",
+                              #                                          Dictionary.Profile = "Default",
+                              #                                          FuzzyStringMatching.Profile = "Default"),
+                              #                 FeatureObligations = list(RuleSet.Profile = "Default"),
+                              #                 FeatureTracking = list(RuleSet.Profile = "Default")),
+                              #--- Secondary Arguments ---
+                              RunAssignmentChecks = TRUE,
+                              UnpackCuratedDataSet = TRUE,
+                              DSConnections = NULL)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {
   require(dplyr)
@@ -109,13 +109,13 @@ ds.CurateData <- function(RawDataSetName = "RawDataSet",
   Messages$CurationCompletion <- list()
 
 
-  # 1) Trigger dsCCPhos::CurateDataDS()
+  # 1) Trigger dsFredaP21::CurateDataDS()
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   # Execute the server-side function call
   DSI::datashield.assign(conns = DSConnections,
                          symbol = OutputName,
-                         value = call("CurateDataDS",
+                         value = call("P21.CurateDataDS",
                                       RawDataSetName.S = RawDataSetName,
                                       Settings.S = Settings))
 
@@ -131,9 +131,9 @@ ds.CurateData <- function(RawDataSetName = "RawDataSet",
   # 2) Extract objects from list returned by CurateDataDS() and assign them to R server sessions
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  CurationOutputObjects <- c("CuratedDataSet",
-                             "CurationReport",
-                             "CurationMessages")
+  CurationOutputObjects <- c("P21.CuratedDataSet",
+                             "P21.CurationReport",
+                             "P21.CurationMessages")
 
   for(i in 1:length(CurationOutputObjects))
   {
@@ -157,22 +157,22 @@ ds.CurateData <- function(RawDataSetName = "RawDataSet",
   if (UnpackCuratedDataSet == TRUE)
   {
       # Get curated table names
-      CCPTableNames.CDS <- dsCCPhosClient::Meta.Tables$TableName.Curated
+      P21TableNames.CDS <- dsFredaP21Client::Meta.Tables$TableName.Curated
 
-      for(i in 1:length(CCPTableNames.CDS))
+      for(i in 1:length(P21TableNames.CDS))
       {
           # Execute server-side assign function
           DSI::datashield.assign(conns = DSConnections,
-                                 symbol = paste0("CDS.", CCPTableNames.CDS[i]),      # E.g. 'CDS.Metastasis'
+                                 symbol = paste0("P21.CDS.", P21TableNames.CDS[i]),      # E.g. 'CDS.Metastasis'
                                  value = call("ExtractFromListDS",
-                                              ListName.S = "CuratedDataSet",
-                                              ObjectName.S = CCPTableNames.CDS[i]))
+                                              ListName.S = "P21.CuratedDataSet",
+                                              ObjectName.S = P21TableNames.CDS[i]))
 
           if (RunAssignmentChecks == TRUE)
           {
               # Call helper function to check if object assignment succeeded
               Messages$Assignment <- c(Messages$Assignment,
-                                       ds.GetObjectStatus(ObjectName = paste0("CDS.", CCPTableNames.CDS[i]),
+                                       ds.GetObjectStatus(ObjectName = paste0("P21.CDS.", P21TableNames.CDS[i]),
                                                           DSConnections = DSConnections))
           }
       }
@@ -195,7 +195,7 @@ ds.CurateData <- function(RawDataSetName = "RawDataSet",
 
   CurationMessages <- DSI::datashield.aggregate(conns = DSConnections,
                                                 expr = call("GetReportingObjectDS",
-                                                            ObjectName.S = "CurationMessages"))
+                                                            ObjectName.S = "P21.CurationMessages"))
 
   # Create table object for output
   CurationCompletionCheck <- CurationMessages %>%

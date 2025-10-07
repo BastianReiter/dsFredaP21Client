@@ -1,5 +1,5 @@
 
-#' ds.AugmentData
+#' ds.P21.AugmentData
 #'
 #' `r lifecycle::badge("stable")` \cr\cr
 #' Transforms curated CCP core data set (CDM) into augmented data set (ADM)
@@ -17,11 +17,11 @@
 #'
 #' @author Bastian Reiter
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-ds.AugmentData <- function(CuratedDataSetName = "CuratedDataSet",
-                           OutputName = "AugmentationOutput",
-                           RunAssignmentChecks = TRUE,
-                           UnpackAugmentedDataSet = TRUE,
-                           DSConnections = NULL)
+ds.P21.AugmentData <- function(CuratedDataSetName = "P21.CuratedDataSet",
+                               OutputName = "P21.AugmentationOutput",
+                               RunAssignmentChecks = TRUE,
+                               UnpackAugmentedDataSet = TRUE,
+                               DSConnections = NULL)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {
   require(dplyr)
@@ -45,13 +45,13 @@ ds.AugmentData <- function(CuratedDataSetName = "CuratedDataSet",
   Messages$AugmentationCompletion <- list()
 
 
-  # 1) Trigger dsCCPhos::AugmentDataDS()
+  # 1) Trigger dsFredaP21::AugmentDataDS()
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   # Execute the server-side function call
   DSI::datashield.assign(conns = DSConnections,
                          symbol = OutputName,
-                         value = call("AugmentDataDS",
+                         value = call("P21.AugmentDataDS",
                                       CuratedDataSetName.S = CuratedDataSetName))
 
   if (RunAssignmentChecks == TRUE)
@@ -67,9 +67,9 @@ ds.AugmentData <- function(CuratedDataSetName = "CuratedDataSet",
   # 2) Extract objects from list returned by AugmentDataDS() and assign them to R server sessions
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  AugmentationOutputObjects <- c("AugmentedDataSet",
-                                 "AugmentationReport",
-                                 "AugmentationMessages")
+  AugmentationOutputObjects <- c("P21.AugmentedDataSet",
+                                 "P21.AugmentationReport",
+                                 "P21.AugmentationMessages")
 
   for(i in 1:length(AugmentationOutputObjects))
   {
@@ -93,22 +93,28 @@ ds.AugmentData <- function(CuratedDataSetName = "CuratedDataSet",
   if (UnpackAugmentedDataSet == TRUE)
   {
       # Define ADS table names
-      CCPTableNames.ADS <- c("Patient", "Diagnosis", "Therapy", "DiseaseCourse", "Events")
+      P21TableNames.ADS <- c("Case",
+                             "Diagnosis",
+                             "Events",
+                             "Patient",
+                             "PatientCancer",
+                             "PatientHIVCancer",
+                             "Procedures")
 
-      for(i in 1:length(CCPTableNames.ADS))
+      for(i in 1:length(P21TableNames.ADS))
       {
           # Execute server-side assign function
           DSI::datashield.assign(conns = DSConnections,
-                                 symbol = paste0("ADS.", CCPTableNames.ADS[i]),      # E.g. 'ADS.Events'
+                                 symbol = paste0("P21.ADS.", P21TableNames.ADS[i]),      # E.g. 'ADS.Events'
                                  value = call("ExtractFromListDS",
-                                              ListName.S = "AugmentedDataSet",
-                                              ObjectName.S = CCPTableNames.ADS[i]))
+                                              ListName.S = "P21.AugmentedDataSet",
+                                              ObjectName.S = P21TableNames.ADS[i]))
 
           if (RunAssignmentChecks == TRUE)
           {
               # Call helper function to check if object assignment succeeded
               Messages$Assignment <- c(Messages$Assignment,
-                                       ds.GetObjectStatus(ObjectName = paste0("ADS.", CCPTableNames.ADS[i]),
+                                       ds.GetObjectStatus(ObjectName = paste0("P21.ADS.", P21TableNames.ADS[i]),
                                                           DSConnections = DSConnections))
           }
       }
@@ -130,7 +136,7 @@ ds.AugmentData <- function(CuratedDataSetName = "CuratedDataSet",
 
   AugmentationMessages <- DSI::datashield.aggregate(conns = DSConnections,
                                                     expr = call("GetReportingObjectDS",
-                                                                ObjectName.S = "AugmentationMessages"))
+                                                                ObjectName.S = "P21.AugmentationMessages"))
 
   # Create table object for output
   AugmentationCompletionCheck <- AugmentationMessages %>%

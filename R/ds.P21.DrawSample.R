@@ -1,5 +1,5 @@
 
-#' ds.DrawSample
+#' ds.P21.DrawSample
 #'
 #' `r lifecycle::badge("stable")` \cr\cr
 #' Draw a random sample from Raw Data Set
@@ -16,10 +16,10 @@
 #'
 #' @author Bastian Reiter
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-ds.DrawSample <- function(RawDataSetName = "RawDataSet",
-                          SampleSize = 100,
-                          SampleName = "RDSSample",
-                          DSConnections = NULL)
+ds.P21.DrawSample <- function(RawDataSetName = "P21.RawDataSet",
+                              SampleSize = 100,
+                              SampleName = "P21.RDSSample",
+                              DSConnections = NULL)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {
   # Check validity of 'DSConnections' or find them programmatically if none are passed
@@ -30,7 +30,7 @@ ds.DrawSample <- function(RawDataSetName = "RawDataSet",
   # Execute server-side assign function
   DSI::datashield.assign(conns = DSConnections,
                          symbol = SampleName,
-                         value = call("DrawSampleDS",
+                         value = call("P21.DrawSampleDS",
                                       RawDataSetName.S = RawDataSetName,
                                       SampleSize.S = SampleSize))
 

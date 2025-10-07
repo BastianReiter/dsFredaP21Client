@@ -1,5 +1,5 @@
 
-#' ds.UnpackAugmentedDataSet
+#' ds.P21.UnpackAugmentedDataSet
 #'
 #' Make tables within Augmented Data Set (\code{list} object) directly addressable in R server sessions.
 #'
@@ -13,8 +13,8 @@
 #'
 #' @author Bastian Reiter
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-ds.UnpackAugmentedDataSet <- function(AugmentedDataSetName = "AugmentedDataSet",
-                                      DSConnections = NULL)
+ds.P21.UnpackAugmentedDataSet <- function(AugmentedDataSetName = "P21.AugmentedDataSet",
+                                          DSConnections = NULL)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {
   # --- For Testing Purposes ---
@@ -31,20 +31,26 @@ ds.UnpackAugmentedDataSet <- function(AugmentedDataSetName = "AugmentedDataSet",
   Messages$Assignment <- list()
 
   # Define ADS table names
-  CCPTableNames_ADS <- c("Patient", "Diagnosis", "Therapy", "DiseaseCourse", "Events")
+  P21TableNames.ADS <- c("Case",
+                         "Diagnosis",
+                         "Events",
+                         "Patient",
+                         "PatientCancer",
+                         "PatientHIVCancer",
+                         "Procedures")
 
-  for(i in 1:length(CCPTableNames_ADS))
+  for(i in 1:length(P21TableNames.ADS))
   {
       # Execute server-side assign function
       DSI::datashield.assign(conns = DSConnections,
-                             symbol = paste0("ADS_", CCPTableNames_ADS[i]),      # E.g. 'ADS_Events'
+                             symbol = paste0("P21.ADS.", P21TableNames.ADS[i]),      # E.g. 'ADS.Events'
                              value = call("ExtractFromListDS",
                                           ListName.S = AugmentedDataSetName,
-                                          ObjectName.S = CCPTableNames_ADS[i]))
+                                          ObjectName.S = P21TableNames.ADS[i]))
 
       # Call helper function to check if object assignment succeeded
       Messages$Assignment <- c(Messages$Assignment,
-                               ds.GetObjectStatus(ObjectName = paste0("ADS_", CCPTableNames_ADS[i]),
+                               ds.GetObjectStatus(ObjectName = paste0("P21.ADS.", P21TableNames.ADS[i]),
                                                   DSConnections = DSConnections))
   }
 

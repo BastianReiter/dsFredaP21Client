@@ -1,5 +1,5 @@
 
-#' LoadRawDataSet
+#' P21.LoadRawDataSet
 #'
 #' `r lifecycle::badge("stable")` \cr\cr
 #' Load raw data set from Opal data base into R session on servers.
@@ -15,11 +15,11 @@
 #'
 #' @author Bastian Reiter
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-LoadRawDataSet <- function(ServerSpecifications = NULL,
-                           RawTableNames = dsCCPhosClient::Meta.Tables$TableName.Raw,
-                           CuratedTableNames = dsCCPhosClient::Meta.Tables$TableName.Curated,
-                           RunAssignmentChecks = TRUE,
-                           DSConnections = NULL)
+P21.LoadRawDataSet <- function(ServerSpecifications = NULL,
+                               RawTableNames = dsCCPhosClient::Meta.Tables$TableName.Raw,
+                               CuratedTableNames = dsCCPhosClient::Meta.Tables$TableName.Curated,
+                               RunAssignmentChecks = TRUE,
+                               DSConnections = NULL)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {
   require(dplyr)

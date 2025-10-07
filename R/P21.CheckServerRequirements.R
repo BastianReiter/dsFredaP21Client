@@ -1,5 +1,5 @@
 
-#' CheckServerRequirements
+#' P21.CheckServerRequirements
 #'
 #' `r lifecycle::badge("stable")` \cr\cr
 #' Check if technical requirements are met on every participating server.
@@ -7,7 +7,6 @@
 #' @param ServerSpecifications \code{data.frame} - Same \code{data.frame} used for login. Used here only for acquisition of server-specific project names (in case they are differing). - Default: \code{NULL} for virtual project
 #' @param RequiredPackages A \code{character vector} naming required packages
 #' @param RequiredFunctions A named \code{character vector} containing names of required functions. Their type ('aggregate' or 'assign') is defined by the correspondent element names.
-#' @param RequiredOpalTableNames \code{character vector} - The expected names of the Opal data base tables.
 #' @param DSConnections \code{list} of \code{DSConnection} objects. This argument may be omitted if such an object is already uniquely specified in the global environment.
 #'
 #' @return A \code{list} of \code{data.frames} containing gathered info and messages
@@ -15,17 +14,15 @@
 #'
 #' @author Bastian Reiter
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-CheckServerRequirements <- function(ServerSpecifications = NULL,
-                                    RequiredPackages = c("dsBase",
-                                                         "dsCCPhos",
-                                                         "dsTidyverse"),
-                                    RequiredFunctions = c(aggregate = "GetReportingObjectDS",
-                                                          assign = "AugmentDataDS",
-                                                          assign = "CurateDataDS",
-                                                          assign = "ExtractFromListDS",
-                                                          assign = "DrawSampleDS"),
-                                    RequiredOpalTableNames = dsCCPhosClient::Meta.Tables$TableName.Raw,
-                                    DSConnections = NULL)
+P21.CheckServerRequirements <- function(ServerSpecifications = NULL,
+                                        RequiredPackages = c("dsBase",
+                                                             "dsFredaP21",
+                                                             "dsTidyverse"),
+                                        RequiredFunctions = c(assign = "P21.AugmentDataDS",
+                                                              assign = "P21.CurateDataDS",
+                                                              assign = "P21.DrawSampleDS",
+                                                              assign = "P21.PrepareRawDataSetDS"),
+                                        DSConnections = NULL)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {
   require(dplyr)
@@ -35,7 +32,7 @@ CheckServerRequirements <- function(ServerSpecifications = NULL,
 
   # --- For Testing Purposes ---
   # DSConnections <- CCPConnections
-  # RequiredPackages = c("dsBase", "dsCCPhos")
+  # RequiredPackages = c("dsBase", "dsFredaP21")
   # RequiredFunctions = c(aggregate = "GetReportingObjectDS",
   #                       assign = "AugmentDataDS",
   #                       assign = "CurateDataDS",
@@ -49,7 +46,7 @@ CheckServerRequirements <- function(ServerSpecifications = NULL,
   # Initiate output messaging objects
   Messages <- list()
   Messages$PackageAvailability <- c(Topic = "Package availability")
-  Messages$VersionOfdsCCPhos <- c(Topic = "Version of dsCCPhos")
+  Messages$VersionOfdsFredaP21 <- c(Topic = "Version of dsFredaP21")
   Messages$FunctionAvailability <- c(Topic = "Function availability")
   Messages$TableAvailability <- c(Topic = "Opal DB table availability")
 
@@ -112,53 +109,53 @@ CheckServerRequirements <- function(ServerSpecifications = NULL,
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Available version of dsCCPhos
+# Available version of dsFredaP21
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  # Get version number of dsCCPhos on all servers and check for equality
-  VersionOfdsCCPhos <- as_tibble(DSI::datashield.pkg_status(conns = DSConnections)$version_status,
-                                 rownames = "PackageName") %>%
-                          filter(PackageName == "dsCCPhos") %>%
-                          select(-PackageName)
+  # Get version number of dsFredaP21 on all servers and check for equality
+  VersionOfdsFredaP21 <- as_tibble(DSI::datashield.pkg_status(conns = DSConnections)$version_status,
+                                   rownames = "PackageName") %>%
+                            filter(PackageName == "dsFredaP21") %>%
+                            select(-PackageName)
 
-  if (nrow(VersionOfdsCCPhos > 0))
+  if (nrow(VersionOfdsFredaP21 > 0))
   {
-      IsEqualEverywhere <- apply(VersionOfdsCCPhos, 1, function(Values) { all(Values == Values[1]) })
+      IsEqualEverywhere <- apply(VersionOfdsFredaP21, 1, function(Values) { all(Values == Values[1]) })
       MessageOverall <- NULL
       MessagesDetail <- NULL
 
       if (IsEqualEverywhere == TRUE)
       {
-          MessageOverall <- MakeFunctionMessage(Text = paste0("Version of dsCCPhos is equal on all servers (Ver. ", VersionOfdsCCPhos[1, 1], ")!"),
+          MessageOverall <- MakeFunctionMessage(Text = paste0("Version of dsFredaP21 is equal on all servers (Ver. ", VersionOfdsFredaP21[1, 1], ")!"),
                                                 IsClassSuccess = TRUE)
       }
       else
       {
-          MessagesOverall <- MakeFunctionMessage(Text = paste0("Version of dsCCPhos varies between servers!"),
+          MessagesOverall <- MakeFunctionMessage(Text = paste0("Version of dsFredaP21 varies between servers!"),
                                                  IsClassWarning = TRUE)
 
-          for (i in 1:ncol(VersionOfdsCCPhos))
+          for (i in 1:ncol(VersionOfdsFredaP21))
           {
-              MessagesDetail <- c(Messages$VersionOfdsCCPhos,
-                                  MakeFunctionMessage(Text = paste0(names(VersionOfdsCCPhos)[i], ": Ver. ", VersionOfdsCCPhos[, i]),
+              MessagesDetail <- c(Messages$VersionOfdsFredaP21,
+                                  MakeFunctionMessage(Text = paste0(names(VersionOfdsFredaP21)[i], ": Ver. ", VersionOfdsFredaP21[, i]),
                                                       IsClassInfo = TRUE))
           }
       }
 
-      Messages$VersionOfdsCCPhos <- c(Messages$VersionOfdsCCPhos,
-                                      MessageOverall,
-                                      MessagesDetail)
+      Messages$VersionOfdsFredaP21 <- c(Messages$VersionOfdsFredaP21,
+                                        MessageOverall,
+                                        MessagesDetail)
   }
 
   # Transform / Transpose data frame into more handy return object
-  VersionOfdsCCPhos <- VersionOfdsCCPhos %>%
+  VersionOfdsFredaP21 <- VersionOfdsFredaP21 %>%
                             pivot_longer(everything(),
                                          names_to = "ServerName",
-                                         values_to = "dsCCPhosVersion")
+                                         values_to = "dsFredaP21Version")
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# CCPhos disclosure settings
+# FredaP21 disclosure settings
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   # ---
@@ -224,50 +221,6 @@ CheckServerRequirements <- function(ServerSpecifications = NULL,
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Availability of Opal data base tables on servers
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-  # Get info on Opal table availability with dsCCPhosClient::GetServerOpalDBInfo()
-  RequiredOpalTableAvailability <- dsFredaClient::GetServerOpalInfo(ServerSpecifications,
-                                                                    RequiredTableNames = RequiredOpalTableNames,
-                                                                    DSConnections)
-
-  # Compile output message concerning one table each and add it to Messages
-  for (i in 1:nrow(RequiredOpalTableAvailability))
-  {
-      Row <- RequiredOpalTableAvailability[i, ]
-
-      # Note: It's important to use 'dplyr::if_else()' instead of 'ifelse' here, otherwise the return won't be a named vector
-      Message <- if_else(Row$IsAvailableEverywhere == TRUE,
-                         MakeFunctionMessage(Text = paste0("Opal data base table '",
-                                                           Row$TableName,
-                                                           "' is available on all servers!"),
-                                             IsClassSuccess = TRUE),
-                         MakeFunctionMessage(Text = paste0("Opal data base table '",
-                                                           Row$TableName,
-                                                           "' is not available at ",
-                                                           Row$NotAvailableAt),
-                                             IsClassWarning = TRUE))
-
-      Messages$TableAvailability <- c(Messages$TableAvailability,
-                                      Message)
-  }
-
-  # Transform / Transpose data frame into more handy return object
-  RequiredOpalTableAvailability <- RequiredOpalTableAvailability %>%
-                                      select(-IsAvailableEverywhere,
-                                             -NotAvailableAt) %>%
-                                      pivot_longer(!TableName,
-                                                   names_to = "ServerName",
-                                                   values_to = "IsAvailable") %>%
-                                      pivot_wider(names_from = TableName,
-                                                  values_from = IsAvailable) %>%
-                                      mutate(CheckOpalTableAvailability = case_when(if_all(-ServerName, ~ .x == TRUE) ~ "green",
-                                                                                    TRUE ~ "red"))
-
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Print messages and return list object
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -276,8 +229,7 @@ CheckServerRequirements <- function(ServerSpecifications = NULL,
 
   # Invisibly return list containing data frames of gathered info and messages
   invisible(list(PackageAvailability = RequiredPackageAvailability,
-                 VersionOfdsCCPhos = VersionOfdsCCPhos,
+                 VersionOfdsFredaP21 = VersionOfdsFredaP21,
                  FunctionAvailability = RequiredFunctionAvailability,
-                 OpalTableAvailability = RequiredOpalTableAvailability,
                  Messages = Messages))
 }
