@@ -1,40 +1,42 @@
 
 #' P21.LoadRawDataSet
 #'
-#' `r lifecycle::badge("stable")` \cr\cr
-#' Load raw data set from Opal data base into R session on servers.
+#' `r lifecycle::badge("experimental")` \cr\cr
+#' Load data from resources into R session on servers.
 #'
 #' @param ServerSpecifications \code{data.frame} - Same \code{data.frame} used for login. Used here only for acquisition of server-specific project names (in case they are differing) - Default: \code{NULL} for virtual project
-#' @param RawTableNames \code{character vector} - The expected names of the Opal data base tables
-#' @param CuratedTableNames \code{character vector} - The corresponding curated table names (used for assignment in R session)
+#' @param ResourceNames.Mapping \code{character vector} - Usually the expected/required (generic) \code{resource} names. Can optionally be a named vector, with the names being expected names of \code{resources} and the vector values being the names of the assigned R \code{data.frames}.
+#' @param ResourceNames.Dictionary Optional \code{list} of named \code{character vectors} - To enable server-specific mapping of deviating to required resource names. Names of list elements must match server names. For rules that should be applied on all servers, choose form \code{list(All = c('LookupName' = 'RequiredName'))}.
 #' @param RunAssignmentChecks \code{logical} Indicating whether assignment checks should be performed or omitted for reduced execution time - Default: \code{TRUE}
 #' @param DSConnections \code{list} of \code{DSConnection} objects. This argument may be omitted if such an object is already uniquely specified in the global environment.
 #'
 #' @return A \code{list} of messages
+#'
 #' @export
 #'
 #' @author Bastian Reiter
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 P21.LoadRawDataSet <- function(ServerSpecifications = NULL,
-                               RawTableNames = dsCCPhosClient::Meta.Tables$TableName.Raw,
-                               CuratedTableNames = dsCCPhosClient::Meta.Tables$TableName.Curated,
+                               ResourceNames.Mapping = setNames(dsFredaP21Client::Meta.Tables$TableName.Curated, nm = dsFredaP21Client::Meta.Tables$TableName.Raw),
+                               ResourceNames.Dictionary = NULL,
                                RunAssignmentChecks = TRUE,
                                DSConnections = NULL)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {
-  require(dplyr)
-  require(dsBaseClient)
-  require(DSI)
-  require(purrr)
-  require(stringr)
-  require(tidyr)
-
   # --- For Testing Purposes ---
   # ServerSpecifications <- NULL
-  # RawTableNames <- dsCCPhosClient::Meta.Tables$TableName.Raw
-  # CuratedTableNames <- dsCCPhosClient::Meta.Tables$TableName.Curated
+  # ResourceNames.Mapping <- setNames(dsFredaP21Client::Meta.Tables$TableName.Curated,
+  #                                   nm = dsFredaP21Client::Meta.Tables$TableName.Raw)
+  # ResourceNames.Dictionary <- list(ServerA = c(FALL = "Fall"),
+  #                             ServerB = c(opsc = "OPS"))
   # RunAssignmentChecks <- TRUE
   # DSConnections <- CCPConnections
+
+  # --- Argument Validation ---
+  assert_that(is.character(ResourceNames.Mapping),
+              is.flag(RunAssignmentChecks))
+  if (!is.null(ServerSpecifications)) { assert_that(is.data.frame(ServerSpecifications)) }
+  if (!is.null(ResourceNames.Dictionary)) { assert_that(is.list(ResourceNames.Dictionary)) }
 
   # Check validity of 'DSConnections' or find them programmatically if none are passed
   DSConnections <- CheckDSConnections(DSConnections)
@@ -48,64 +50,55 @@ P21.LoadRawDataSet <- function(ServerSpecifications = NULL,
   # Get server names
   ServerNames <- names(DSConnections)
 
-  # Compile a vector of table names to look for in server Opal data bases
-  # Usually this should be 'RawTableNames' but also check 'CuratedTableNames' because some servers might already have adopted 'curated' table names
-  TableNamesToLookFor <- c(RawTableNames,
-                           CuratedTableNames)
+  # If argument 'ResourceNames.Mapping' is an unnamed vector, set vector values as names
+  if (is.null(names(ResourceNames.Mapping))) { names(ResourceNames.Mapping) <- ResourceNames.Mapping }
 
-  # Check Opal table availability
-  OpalTableAvailability <- GetServerOpalInfo(ServerSpecifications = ServerSpecifications,
-                                             RequiredTableNames = TableNamesToLookFor,
-                                             DSConnections = DSConnections)
-
+  # Get data on resource availability from separate function
+  ResourceAvailability <- dsFredaClient::GetServerResourcesInfo(ServerSpecifications = ServerSpecifications,
+                                                                ResourceNames.Required = names(ResourceNames.Mapping),
+                                                                ResourceNames.Dictionary = ResourceNames.Dictionary,
+                                                                DSConnections = DSConnections)
 
 #-------------------------------------------------------------------------------
-# Assignment in R server sessions
+# Import resource data into R server sessions
 #-------------------------------------------------------------------------------
 
   # Loop through all participating servers
   for (i in 1:length(ServerNames))
   {
-      # In case ServerSpecifications are NULL, server Opal table will not be concatenated with server-specific project names
-      ServerTableNames <- TableNamesToLookFor
-      ServerProjectName <- NULL
+      # Create data.frame containing mapping from resource names to R object names
+      ResourcesToR <- ResourceAvailability$Resources.Available %>%
+                          filter(Server == ServerNames[i],
+                                 IsAvailable == TRUE,
+                                 IsRequired == TRUE) %>%
+                          mutate(RTableName = case_when(ResourceName.Generic %in% names(ResourceNames.Mapping) ~ paste0("P21.RDS.", ResourceNames.Mapping[ResourceName.Generic]),
+                                                        .default = paste0("P21.RDS.", ResourceName.Generic)))
 
-      # If ServerSpecifications are assigned, there can be server-specific project names and therefore server-specific Opal table names
-      if (!is.null(ServerSpecifications))
+      # Loop through available and required resources and assign their content to data.frames in R session
+      for (j in 1:nrow(ResourcesToR))
       {
-          # Get server-specific project name
-          ServerProjectName <- ServerSpecifications %>%
-                                    filter(ServerName == ServerNames[i]) %>%
-                                    select(ProjectName) %>%
-                                    pull()
+          # We know that there is a resource (class 'resource') on the servers pointing to a local csv-file
+          # Note: Currently, if unknown, there is no way to find out from client-side what exactly a specific resource points at (CSV, DB, Computational resource...)
+          # First step is to create a 'ResourceClient' on the servers to handle the resource
 
-          # If ServerProjectName is "Virtual" (as it is the case when using virtual infrastructure in CCPhosApp) make the variable empty so that server Opal table names are just raw table names
-          if (ServerProjectName == "Virtual") { ServerProjectName <- "" }
+          # Assign the resource client name to a symbol first
+          ResourceClientName <- paste0("ResourceClient.", ResourcesToR$ResourceName.Generic[j])
 
-          # Else add a dot ('.') to ServerProjectName according to Opal table name nomenclature
-          else { ServerProjectName <- paste0(ServerProjectName, ".") }
-      }
+          # Assign RessourceClient object on server
+          DSI::datashield.assign.resource(conns = DSConnections[[i]],
+                                          symbol = ResourceClientName,
+                                          resource = ResourcesToR$ResourceName[j])
 
-      # Create tibble that takes only available Opal tables and matches their names to R symbol names that are used in following assignment
-      TableNameMatching <- OpalTableAvailability %>%
-                                rename(IsAvailable = ServerNames[i]) %>%
-                                select(TableName,
-                                       IsAvailable) %>%
-                                filter(IsAvailable == TRUE) %>%
-                                distinct() %>%
-                                mutate(# Create feature with server-specific table names (server-specific project name concatenated with generic table names)
-                                       OpalTableName = paste0(ServerProjectName, TableName),
-                                       # Turn 'RawTableNames' into 'CuratedTableNames' where necessary and concatenate with prefix 'RDS.'
-                                       RTableName = case_when(TableName %in% RawTableNames ~ paste0("RDS.", setNames(CuratedTableNames, nm = RawTableNames)[TableName]),
-                                                              .default = paste0("RDS.", TableName)))
+          # The first step requires a suitable 'ResourceResolver' to be registered on the servers. For csv-files this is already given by loading the 'resourcer' package on the servers.
+          # Then we can actually load the data of the resource into the server R session by calling 'as.resource.data.frame' on it
+          DSI::datashield.assign.expr(conns = DSConnections[[i]],
+                                      symbol = ResourcesToR$RTableName[j],
+                                      expr = bquote(as.resource.data.frame(x = .(as.name(ResourceClientName)),      # Everything in '.(...)' gets evaluated before complete expression is created and passed
+                                                                           strict = 'TRUE')))
 
-      # Loop through available Opal DB tables and assign their content to objects (data.frames) in R session
-      for (j in 1:nrow(TableNameMatching))
-      {
-          datashield.assign(conns = DSConnections[[i]],
-                            symbol = TableNameMatching$RTableName[j],
-                            value = TableNameMatching$OpalTableName[j],
-                            id.name = "_id")
+          # Add message about resource to R session mapping
+          Messages$Assignment <- c(Messages$Assignment,
+                                   Info = paste0("Server '", names(DSConnections)[i], "': Mapped resource '", ResourcesToR$ResourceName[j], "' to data.frame '", ResourcesToR$RTableName[j], "'."))
       }
   }
 
@@ -119,10 +112,10 @@ P21.LoadRawDataSet <- function(ServerSpecifications = NULL,
       BundledMessages <- list()
 
       # Loop through all tables to get info about assignment on servers
-      for(i in 1:length(CuratedTableNames))
+      for(tablename in ResourceNames.Mapping)
       {
           # Make sure assignment was successful on all servers
-          ObjectStatus_Table <- ds.GetObjectStatus(ObjectName = paste0("RDS.", CuratedTableNames[i]),
+          ObjectStatus_Table <- ds.GetObjectStatus(ObjectName = paste0("P21.RDS.", tablename),
                                                    DSConnections = DSConnections)
 
           # Add info about table assignment to Messages
@@ -138,11 +131,11 @@ P21.LoadRawDataSet <- function(ServerSpecifications = NULL,
 
 
 #-------------------------------------------------------------------------------
-# Assign list 'RawDataSet' on all servers
+# Assign list 'P21.RawDataSet' on all servers
 #-------------------------------------------------------------------------------
 
   # Create list of vectors (one for each server) containing names of actually existing data.frames
-  ExistingRDSTables <- paste0("RDS.", CuratedTableNames) %>%
+  ExistingRDSTables <- paste0("P21.RDS.", ResourceNames.Mapping) %>%
                             map(function(tablename)
                                 {
                                     if (!is.na(tablename))
@@ -152,25 +145,25 @@ P21.LoadRawDataSet <- function(ServerSpecifications = NULL,
                                         return(NULL)
                                     }
                                 }) %>%
-                            set_names(paste0("RDS.", CuratedTableNames)) %>%
+                            set_names(paste0("P21.RDS.", ResourceNames.Mapping)) %>%
                             list_transpose() %>%
                             map(\(TableNames) names(TableNames[TableNames == TRUE]))
 
-  # For every server, consolidate all existing Raw Data Set tables in one list object called "RawDataSet"
+  # For every server, consolidate all existing Raw Data Set tables in one list object called "P21.RawDataSet"
   ExistingRDSTables %>%
       purrr::iwalk(function(RDSTableNames, servername)
                    {
-                      # Note: Tables within list 'RawDataSet' are named WITHOUT prefix 'RDS.'
+                      # Note: Tables within list 'P21.RawDataSet' are named WITHOUT prefix 'P21.RDS.'
                       dsFredaClient::ds.MakeList(ObjectNames = setNames(object = RDSTableNames,
-                                                                        nm = str_remove(RDSTableNames, "RDS.")),
-                                                 OutputName = "RawDataSet",
+                                                                        nm = str_remove(RDSTableNames, "P21.RDS.")),
+                                                 OutputName = "P21.RawDataSet",
                                                  DSConnections = DSConnections[servername])
                    })
 
   if (RunAssignmentChecks == TRUE)
   {
       # Make sure assignment of RawDataSet was successful on all servers
-      ObjectStatus_RawDataSet <- ds.GetObjectStatus(ObjectName = "RawDataSet",
+      ObjectStatus_RawDataSet <- ds.GetObjectStatus(ObjectName = "P21.RawDataSet",
                                                     DSConnections = DSConnections)
 
       # Add info about RawDataSet assignment to Messages

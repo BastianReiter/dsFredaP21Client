@@ -1,6 +1,6 @@
 Package: dsFredaP21Client
 Title: Enabling Data Science with P21 data
-Version: 0.1.0
+Version: 0.2.06
 Authors@R: 
     person("Bastian", "Reiter", , "b.reiter@med.uni-frankfurt.de", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-1088-0502"))
@@ -11,14 +11,32 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports:
-    dsFredaP21,
-    dsFredaClient
+    assertthat,
+    cli,
+    dplyr,
+    dsBaseClient,
+    dsFredaClient,
+    DSI,
+    lifecycle,
+    magrittr,
+    purrr,
+    tibble,
+    tidyr
 Suggests:
-    CCPhosApp
+    dsFredaP21,
+    DSLite,
+    dsTidyverse,
+    dsTidyverseClient,
+    ggplot2,
+    gt,
+    quarto,
+    scales,
+    sysfonts,
+    utils
 Depends: 
     R (>= 4.3.0)
 LazyData: true
 Remotes: 
-    BastianReiter/CCPhosApp,
     BastianReiter/dsFredaP21,
-    BastianReiter/dsFredaClient
+    BastianReiter/dsFredaClient,
+    datashield/dsBaseClient

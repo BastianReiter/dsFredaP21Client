@@ -1,14 +1,15 @@
+#' @keywords internal
+"_PACKAGE"
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-#
-# - dsCCPhosClient Imports and Re-Exports -
-#
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-#-------------------------------------------------------------------------------
-# Import from dsFredaClient
-#-------------------------------------------------------------------------------
-
+## usethis namespace: start
+#' @import assertthat
+#' @import dplyr
+#' @import purrr
+#' @import stringr
+#' @import tibble
+#' @import tidyr
+#' @importFrom dsFredaClient AddCumulativeRow
+#' @importFrom dsFredaClient CheckDSConnections
 #' @importFrom dsFredaClient DisplayTimeSeries
 #' @importFrom dsFredaClient ds.ExtractFromList
 #' @importFrom dsFredaClient ds.FilterTable
@@ -25,16 +26,23 @@
 #' @importFrom dsFredaClient ds.JoinTables
 #' @importFrom dsFredaClient ds.MakeList
 #' @importFrom dsFredaClient ds.MutateTable
+#' @importFrom dsFredaClient ds.PrepareRawData
 #' @importFrom dsFredaClient ExploreFeature
 #' @importFrom dsFredaClient ExportPlot
 #' @importFrom dsFredaClient GetEligibleValues
-#' @importFrom dsFredaClient GetServerOpalInfo
+#' @importFrom dsFredaClient GetServerOpalDBInfo
+#' @importFrom dsFredaClient GetServerResourcesInfo
 #' @importFrom dsFredaClient GetServerWorkspaceInfo
 #' @importFrom dsFredaClient ggTheme
 #' @importFrom dsFredaClient gtTheme
 #' @importFrom dsFredaClient MakeBoxPlot
 #' @importFrom dsFredaClient MakeColumnPlot
+#' @importFrom dsFredaClient MakeFunctionMessage
+#' @importFrom dsFredaClient PrintMessages
+#' @importFrom magrittr %>%
+## usethis namespace: end
 NULL
+
 
 #' @export
 dsFredaClient::DisplayTimeSeries
@@ -94,7 +102,10 @@ dsFredaClient::ExportPlot
 dsFredaClient::GetEligibleValues
 
 #' @export
-dsFredaClient::GetServerOpalInfo
+dsFredaClient::GetServerOpalDBInfo
+
+#' @export
+dsFredaClient::GetServerResourcesInfo
 
 #' @export
 dsFredaClient::GetServerWorkspaceInfo
@@ -110,6 +121,3 @@ dsFredaClient::MakeBoxPlot
 
 #' @export
 dsFredaClient::MakeColumnPlot
-
-
-

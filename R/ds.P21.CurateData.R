@@ -67,8 +67,9 @@
 #'                                                            \itemize{ \item Monitors
 #'                                                                      \item EligibilityOverviews
 #'                                                                      \item ValueSetOverviews}}
-#'                                              \item CurationMessages \code{list}}}
+#'                                              \item Messages \code{list}}}
 #'                  \item 'CurationCompletionCheck'}
+#'
 #' @export
 #'
 #' @author Bastian Reiter
@@ -88,15 +89,15 @@ ds.P21.CurateData <- function(RawDataSetName = "P21.RawDataSet",
                               DSConnections = NULL)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {
-  require(dplyr)
-  require(purrr)
-
-  #--- For Testing Purposes ---
-  # RawDataSetName <- "RawDataSet"
-  # OutputName <- "CurationOutput"
+  # --- For Testing Purposes ---
+  # RawDataSetName <- "P21.RawDataSet"
+  # OutputName <- "P21.CurationOutput"
+  # Settings <- NULL
   # RunAssignmentChecks <- TRUE
   # UnpackCuratedDataSet <- TRUE
   # DSConnections <- CCPConnections
+
+  # --- Argument Validation ---
 
   # Check validity of 'DSConnections' or find them programmatically if none are passed
   DSConnections <- CheckDSConnections(DSConnections)
@@ -131,24 +132,29 @@ ds.P21.CurateData <- function(RawDataSetName = "P21.RawDataSet",
   # 2) Extract objects from list returned by CurateDataDS() and assign them to R server sessions
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-  CurationOutputObjects <- c("P21.CuratedDataSet",
-                             "P21.CurationReport",
-                             "P21.CurationMessages")
+  # Named vector determining how objects inside CurationOutput list created on servers should be extracted
+  ObjectNames <- setNames(c("P21.CuratedDataSet",
+                            "P21.CurationReport",
+                            "Messages"),
+                          nm = c("CuratedDataSet",
+                                 "CurationReport",
+                                 "Messages"))
 
-  for(i in 1:length(CurationOutputObjects))
+  # Extract objects from CurationOutput list
+  for(i in 1:length(ObjectNames))
   {
       # Execute server-side list extraction
       DSI::datashield.assign(conns = DSConnections,
-                             symbol = CurationOutputObjects[i],
+                             symbol = ObjectNames[i],
                              value = call("ExtractFromListDS",
                                            ListName.S = OutputName,
-                                           ObjectName.S = CurationOutputObjects[i]))
+                                           ObjectName.S = names(ObjectNames)[i]))
 
       if (RunAssignmentChecks == TRUE)
       {
           # Call helper function to check if object assignment succeeded
           Messages$Assignment <- c(Messages$Assignment,
-                                   ds.GetObjectStatus(ObjectName = CurationOutputObjects[i],
+                                   ds.GetObjectStatus(ObjectName = ObjectNames[i],
                                                       DSConnections = DSConnections))
       }
   }
@@ -157,22 +163,22 @@ ds.P21.CurateData <- function(RawDataSetName = "P21.RawDataSet",
   if (UnpackCuratedDataSet == TRUE)
   {
       # Get curated table names
-      P21TableNames.CDS <- dsFredaP21Client::Meta.Tables$TableName.Curated
+      P21TableNames <- dsFredaP21Client::Meta.Tables$TableName.Curated
 
-      for(i in 1:length(P21TableNames.CDS))
+      for(i in 1:length(P21TableNames))
       {
           # Execute server-side assign function
           DSI::datashield.assign(conns = DSConnections,
-                                 symbol = paste0("P21.CDS.", P21TableNames.CDS[i]),      # E.g. 'CDS.Metastasis'
+                                 symbol = paste0("P21.CDS.", P21TableNames[i]),      # E.g. 'CDS.Metastasis'
                                  value = call("ExtractFromListDS",
                                               ListName.S = "P21.CuratedDataSet",
-                                              ObjectName.S = P21TableNames.CDS[i]))
+                                              ObjectName.S = P21TableNames[i]))
 
           if (RunAssignmentChecks == TRUE)
           {
               # Call helper function to check if object assignment succeeded
               Messages$Assignment <- c(Messages$Assignment,
-                                       ds.GetObjectStatus(ObjectName = paste0("P21.CDS.", P21TableNames.CDS[i]),
+                                       ds.GetObjectStatus(ObjectName = paste0("P21.CDS.", P21TableNames[i]),
                                                           DSConnections = DSConnections))
           }
       }
@@ -190,12 +196,12 @@ ds.P21.CurateData <- function(RawDataSetName = "P21.RawDataSet",
 
 
 
-  # 3) Get CurationMessages objects from servers (as a list of lists) and create completion check object
+  # 3) Get Messages object from servers (as a list of lists) and create completion check object
   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   CurationMessages <- DSI::datashield.aggregate(conns = DSConnections,
                                                 expr = call("GetReportingObjectDS",
-                                                            ObjectName.S = "P21.CurationMessages"))
+                                                            ObjectName.S = "Messages"))
 
   # Create table object for output
   CurationCompletionCheck <- CurationMessages %>%
@@ -206,17 +212,17 @@ ds.P21.CurateData <- function(RawDataSetName = "P21.RawDataSet",
   Messages$CurationCompletion <- CurationMessages %>%
                                     imap(function(ServerMessages, servername)
                                          {
-                                            case_when(ServerMessages$CheckCurationCompletion == "green" ~ MakeFunctionMessage(Text = paste0("Curation on server '", servername, "' performed successfully!"),
-                                                                                                                              IsClassSuccess = TRUE),
-                                                      ServerMessages$CheckCurationCompletion == "yellow" ~ MakeFunctionMessage(Text = paste0("Curation on server '", servername, "' performed with warnings! \n",
-                                                                                                                                             ServerMessages$FinalMessage),
-                                                                                                                               IsClassWarning = TRUE),
-                                                      ServerMessages$CheckCurationCompletion == "red" ~ MakeFunctionMessage(Text = paste0("Curation on server '", servername, "' could not be performed! \n",
-                                                                                                                                          ServerMessages$FinalMessage),
-                                                                                                                            IsClassFailure = TRUE),
-                                                      TRUE ~ MakeFunctionMessage(Text = paste0("Curation on server '", servername, "' could not be assessed. \n",
-                                                                                               ServerMessages$FinalMessage),
-                                                                                 IsClassFailure = TRUE))
+                                            case_when(ServerMessages$CheckCurationCompletion == "green" ~ dsFredaClient::MakeFunctionMessage(Text = paste0("Curation on server '", servername, "' performed successfully!"),
+                                                                                                                                             IsClassSuccess = TRUE),
+                                                      ServerMessages$CheckCurationCompletion == "yellow" ~ dsFredaClient::MakeFunctionMessage(Text = paste0("Curation on server '", servername, "' performed with warnings! \n",
+                                                                                                                                                            ServerMessages$FinalMessage),
+                                                                                                                                              IsClassWarning = TRUE),
+                                                      ServerMessages$CheckCurationCompletion == "red" ~ dsFredaClient::MakeFunctionMessage(Text = paste0("Curation on server '", servername, "' could not be performed! \n",
+                                                                                                                                                         ServerMessages$FinalMessage),
+                                                                                                                                           IsClassFailure = TRUE),
+                                                      TRUE ~ dsFredaClient::MakeFunctionMessage(Text = paste0("Curation on server '", servername, "' could not be assessed. \n",
+                                                                                                              ServerMessages$FinalMessage),
+                                                                                                IsClassFailure = TRUE))
                                          }) %>%
                                     list_c()
 

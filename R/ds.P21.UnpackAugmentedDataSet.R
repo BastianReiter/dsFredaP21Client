@@ -9,6 +9,7 @@
 #' @param DSConnections \code{list} of \code{DSConnection} objects. This argument may be omitted if such an object is already uniquely specified in the global environment.
 #'
 #' @return A \code{list} of messages about object assignment for monitoring purposes
+#'
 #' @export
 #'
 #' @author Bastian Reiter
@@ -20,6 +21,9 @@ ds.P21.UnpackAugmentedDataSet <- function(AugmentedDataSetName = "P21.AugmentedD
   # --- For Testing Purposes ---
   # AugmentedDataSetName <- "AugmentedDataSet"
   # DSConnections <- CCPConnections
+
+  # --- Argument Validation ---
+  assert_that(is.string(AugmentedDataSetName))
 
   # Check validity of 'DSConnections' or find them programmatically if none are passed
   DSConnections <- CheckDSConnections(DSConnections)

@@ -80,7 +80,7 @@ ds.P21.CurateData(
 \itemize{ \item Monitors
 \item EligibilityOverviews
 \item ValueSetOverviews}}
-\item CurationMessages \code{list}}}
+\item Messages \code{list}}}
 \item 'CurationCompletionCheck'}
 }
 \description{

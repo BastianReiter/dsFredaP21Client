@@ -10,6 +10,7 @@
 #' @param DSConnections \code{list} of \code{DSConnection} objects. This argument may be omitted if such an object is already uniquely specified in the global environment.
 #'
 #' @return A \code{list} of \code{data.frames} containing gathered info and messages
+#'
 #' @export
 #'
 #' @author Bastian Reiter
@@ -25,11 +26,6 @@ P21.CheckServerRequirements <- function(ServerSpecifications = NULL,
                                         DSConnections = NULL)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {
-  require(dplyr)
-  require(dsFredaClient)
-  require(DSI)
-  require(tidyr)
-
   # --- For Testing Purposes ---
   # DSConnections <- CCPConnections
   # RequiredPackages = c("dsBase", "dsFredaP21")
@@ -38,8 +34,10 @@ P21.CheckServerRequirements <- function(ServerSpecifications = NULL,
   #                       assign = "CurateDataDS",
   #                       assign = "ExtractFromListDS")
 
+  # --- Argument Validation ---
+
   # Check validity of 'DSConnections' or find them programmatically if none are passed
-  DSConnections <- CheckDSConnections(DSConnections)
+  DSConnections <- dsFredaClient::CheckDSConnections(DSConnections)
 
 #-------------------------------------------------------------------------------
 
