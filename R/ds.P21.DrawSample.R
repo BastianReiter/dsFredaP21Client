@@ -12,6 +12,7 @@
 #' @param DSConnections \code{list} of \code{DSConnection} objects. This argument may be omitted if such an object is already uniquely specified in the global environment.
 #'
 #' @return A \code{list} of messages about object assignment for monitoring purposes
+#'
 #' @export
 #'
 #' @author Bastian Reiter
@@ -22,10 +23,15 @@ ds.P21.DrawSample <- function(RawDataSetName = "P21.RawDataSet",
                               DSConnections = NULL)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {
+  # --- Argument Validation ---
+  assert_that(is.string(RawDataSetName),
+              is.count(SampleSize),
+              is.string(SampleName))
+
   # Check validity of 'DSConnections' or find them programmatically if none are passed
   DSConnections <- CheckDSConnections(DSConnections)
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#-------------------------------------------------------------------------------
 
   # Execute server-side assign function
   DSI::datashield.assign(conns = DSConnections,
@@ -38,5 +44,11 @@ ds.P21.DrawSample <- function(RawDataSetName = "P21.RawDataSet",
   AssignmentInfo <- ds.GetObjectStatus(SampleName,
                                        DSConnections = DSConnections)
 
-  return(AssignmentInfo)
+#--- Print and invisibly return Messages ---------------------------------------
+
+  # Print messages on console
+  dsFredaClient::PrintMessages(AssignmentInfo)
+
+  # Return Messages invisibly
+  invisible(AssignmentInfo)
 }

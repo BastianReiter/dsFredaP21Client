@@ -6,8 +6,9 @@
 \usage{
 P21.LoadRawDataSet(
   ServerSpecifications = NULL,
-  RawTableNames = dsCCPhosClient::Meta.Tables$TableName.Raw,
-  CuratedTableNames = dsCCPhosClient::Meta.Tables$TableName.Curated,
+  ResourceNames.Mapping = setNames(dsFredaP21Client::Meta.Tables$TableName.Curated, nm =
+    dsFredaP21Client::Meta.Tables$TableName.Raw),
+  ResourceNames.Dictionary = NULL,
   RunAssignmentChecks = TRUE,
   DSConnections = NULL
 )
@@ -15,9 +16,9 @@ P21.LoadRawDataSet(
 \arguments{
 \item{ServerSpecifications}{\code{data.frame} - Same \code{data.frame} used for login. Used here only for acquisition of server-specific project names (in case they are differing) - Default: \code{NULL} for virtual project}
 
-\item{RawTableNames}{\code{character vector} - The expected names of the Opal data base tables}
+\item{ResourceNames.Mapping}{\code{character vector} - Usually the expected/required (generic) \code{resource} names. Can optionally be a named vector, with the names being expected names of \code{resources} and the vector values being the names of the assigned R \code{data.frames}.}
 
-\item{CuratedTableNames}{\code{character vector} - The corresponding curated table names (used for assignment in R session)}
+\item{ResourceNames.Dictionary}{Optional \code{list} of named \code{character vectors} - To enable server-specific mapping of deviating to required resource names. Names of list elements must match server names. For rules that should be applied on all servers, choose form \code{list(All = c('LookupName' = 'RequiredName'))}.}
 
 \item{RunAssignmentChecks}{\code{logical} Indicating whether assignment checks should be performed or omitted for reduced execution time - Default: \code{TRUE}}
 
@@ -27,8 +28,8 @@ P21.LoadRawDataSet(
 A \code{list} of messages
 }
 \description{
-\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}} \cr\cr
-Load raw data set from Opal data base into R session on servers.
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}} \cr\cr
+Load data from resources into R session on servers.
 }
 \author{
 Bastian Reiter

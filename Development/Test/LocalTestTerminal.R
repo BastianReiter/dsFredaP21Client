@@ -33,11 +33,16 @@
 # Load required packages
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+library(dplyr)
 library(dsBaseClient)
-library(dsCCPhosClient)
-library(dsFredaClient)
-library(dsTidyverseClient)
+library(dsFredaP21Client)
+# library(dsFredaClient)
+# library(dsTidyverseClient)
+library(purrr)
 library(resourcer)
+library(stringr)
+library(tibble)
+library(tidyr)
 
 # Print DataSHIELD errors right away
 options(datashield.errors.print = TRUE)
@@ -50,117 +55,80 @@ options(datashield.errors.print = TRUE)
 #TestData <- readRDS("../dsCCPhos/Development/Data/RealData/CCPRealData_Frankfurt.rds")
 TestData <- readRDS("../dsCCPhos/Development/Data/TestData/CCPTestData.rds")
 
-# Definition of test resource, exemplary with local csv-file
-TestResource <- resourcer::newResource(name = "TestResource",
-                                       #url = "file://./Development/Test/DummyData.csv",
-                                       url = "file://localhost/C:/Users/Basti/ARBEIT Lokal/dsCCPhosClient/Development/Test/DummyData.csv",
-                                       format = "csv")
+# Definition of resources pointing to csv-files containing P21 data
+Resource.FAB.csv <- resourcer::newResource(name = "Resource.FAB.csv",
+                                           #url = "file://./Development/Test/DummyData.csv",
+                                           url = "file://localhost/C:/Users/Basti/ARBEIT Lokal/dsFredaP21/Development/Data/RealData/FAB.csv",
+                                           format = "csv")
+Resource.Fall.csv <- resourcer::newResource(name = "Resource.Fall.csv",
+                                           #url = "file://./Development/Test/DummyData.csv",
+                                           url = "file://localhost/C:/Users/Basti/ARBEIT Lokal/dsFredaP21/Development/Data/RealData/Fall.csv",
+                                           format = "csv")
+Resource.ICD.csv <- resourcer::newResource(name = "Resource.ICD.csv",
+                                           #url = "file://./Development/Test/DummyData.csv",
+                                           url = "file://localhost/C:/Users/Basti/ARBEIT Lokal/dsFredaP21/Development/Data/RealData/ICD.csv",
+                                           format = "csv")
+Resource.OPS.csv <- resourcer::newResource(name = "Resource.OPS.csv",
+                                           #url = "file://./Development/Test/DummyData.csv",
+                                           url = "file://localhost/C:/Users/Basti/ARBEIT Lokal/dsFredaP21/Development/Data/RealData/OPS.csv",
+                                           format = "csv")
 
 
-CCPConnections <- ConnectToVirtualCCP(CCPTestData = TestData,
-                                      NumberOfServers = 3,
-                                      NumberOfPatientsPerServer = 2000,
-                                      AddedDsPackages = "dsTidyverse",
-                                      Resources = list(TestResource = TestResource))
-
-
-# QuickProcessingRun()
+CCPConnections <- dsCCPhosClient::ConnectToVirtualCCP(CCPTestData = TestData,
+                                                      NumberOfServers = 3,
+                                                      NumberOfPatientsPerServer = 2000,
+                                                      AddedDsPackages = c("dsTidyverse",
+                                                                          "dsFredaP21"),
+                                                      Resources = list(FAB = Resource.FAB.csv,
+                                                                       Fall = Resource.Fall.csv,
+                                                                       ICD = Resource.ICD.csv,
+                                                                       OPS = Resource.OPS.csv))
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Check server requirements using dsCCPhosClient::CheckServerRequirements()
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-CheckServerRequirements()
-
-
-# datashield.pkg_status(conns = CCPConnections)
-# datashield.method_status(conns = CCPConnections)
-# datashield.methods(conns = CCPConnections, type = "assign")
+dsCCPhosClient::CheckServerRequirements()
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Load Raw Data Set (RDS) from Opal data base to R sessions on servers
+# Load P21 Raw Data Set (RDS) from resources to R sessions on servers
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-LoadRawDataSet(ServerSpecifications = NULL)
-
+P21.LoadRawDataSet(ServerSpecifications = NULL)
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Optionally load additional data from a Resource to R sessions on servers
+# Prior to Data Curation harmonize feature names in RDS
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# List all resources at servers
-DSI::datashield.resources(conns = CCPConnections)
-
-# Status/Accessibility of a specific resource
-DSI::datashield.resource_status(conns = CCPConnections,
-                                resource = "TestResource")
-
-# We know that there is a resource (class 'resource') on the servers pointing to a local csv-file
-# Note: Currently, if unknown, there is no way to find out from client-side what exactly a specific resource points at (CSV, DB, Computational resource...)
-# First step is to create a 'ResourceClient' on the servers to handle the resource:
-
-DSI::datashield.assign.resource(conns = CCPConnections,
-                                symbol = "TestResourceClient",
-                                resource = "TestResource")
-
-# The first step requires a suitable 'ResourceResolver' to be registered on the servers. For csv-files this is already given by loading the 'resourcer' package.
-
-# Then we can actually load the data of the resource into the server R session by calling 'as.resource.data.frame' on it
-datashield.assign.expr(conns = CCPConnections,
-                       symbol = "TestDataFrame",
-                       expr = quote(as.resource.data.frame(TestResourceClient,
-                                                           strict = 'TRUE')))
-                                                           #col_types = cols(.default = 'c'))))
+ds.PrepareRawData(RawDataSetName = "P21.RawDataSet",
+                  Module = "P21",
+                  FeatureNameDictionary = list(Department = c(FAB = "Fachabteilung")),
+                  CompleteCharacterConversion = TRUE,
+                  RDSTableNames = dsFredaP21Client::Meta.Tables$TableName.Curated)
 
 
+TestRDS <- DSLite::getDSLiteData(conns = CCPConnections,
+                                 symbol = "P21.RawDataSet")
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Check RDS tables for existence and completeness
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-RDSTableCheck <- ds.GetDataSetCheck(DataSetName = "RawDataSet",
-                                    Module = "CCP",
-                                    TransformationStage = "Raw")
-
-View(RDSTableCheck$TableStatus)
-
-View(RDSTableCheck$TableRowCounts$Diagnosis)
-View(RDSTableCheck$FeatureExistence$Diagnosis)
-View(RDSTableCheck$FeatureTypes$Diagnosis)
-View(RDSTableCheck$NonMissingValueRates$Diagnosis)
-
-RDSTableCheck$TableStatus
-
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Validate RDS data
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-RDSValidationReports <- ds.GetRDSValidationReport()
-
-# ValidationSummaries <- RDSValidationReports %>%
-#                             map(function(Server)
-#                                 {
-#                                     map()
-#                                 })summary(report))
-
-
-# ValidationReportTables <- ValidationSummaries %>%
-#                               map(\(summary) as.data.frame(summary, check.names = FALSE))
-
+RDSTableCheck <- ds.GetDataSetCheck(DataSetName = "P21.RawDataSet",
+                                    Module = "P21",
+                                    Stage = "Raw")
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Optionally: Draw random sample from Raw Data Set on servers
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-ds.DrawSample(RawDataSetName = "RawDataSet",
-              SampleSize = "1000",
-              SampleName = "RDSSample")
+ds.P21.DrawSample(RawDataSetName = "P21.RawDataSet",
+                  SampleSize = 5000,
+                  SampleName = "P21.RawDataSet")
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -168,80 +136,24 @@ ds.DrawSample(RawDataSetName = "RawDataSet",
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Transform Raw Data Set (RDS) into Curated Data Set (CDS) (using default settings)
-ds.CurateData(RawDataSetName = "RawDataSet",
-              Settings = NULL,
-              OutputName = "CurationOutput")
+ds.P21.CurateData(RawDataSetName = "P21.RawDataSet",
+                  Settings = NULL,
+                  OutputName = "P21.CurationOutput")
 
-CDSTableCheck <- ds.GetDataSetCheck(DataSetName = "CuratedDataSet",
-                                    Modul = "CCP",
-                                    TransformationStage = "Curated")
-
-# Integrated in ds.CuratedData: Make tables from Curated Data Set directly addressable by unpacking them into R server session
-# ds.UnpackCuratedDataSet(CuratedDataSetName = "CuratedDataSet")
+CDSTableCheck <- ds.GetDataSetCheck(DataSetName = "P21.CuratedDataSet",
+                                    Modul = "P21",
+                                    Stage = "Curated")
 
 # Get curation reports
-CurationReport <- ds.GetCurationReport()
-
-View(CurationReport$EntryCounts$BioSampling)
-
-# Exemplary look at a curation report table
-#View(CurationReport$Transformation$All$Monitors$Staging)
-#View(CurationReport$Transformation$All$EligibilityOverviews$Staging)
-#View(CurationReport$Transformation$All$ValueSetOverviews$Raw)
-
-# Get validation report of Curated Data Set (CDS)
-# ValidationReportCDS <- ds.GetValidationReport_CDS(Name_CurationOutput = "CurationOutput",
-#                                                   DataSources = CCPConnections)
-
-
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Plot data on value eligibility for exemplary table in CDS
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# - Restructure eligibility overview table to meet requirements of plot function
-# - Create separate data frames for each 'Feature' value
-# - Columns in final object:
-#   - 'Feature': contains names of features
-#   - 'data': plot data for feature-specific plot
-#-------------------------------------------------------------------------------
-
-PlotData <- CurationReports$All$Transformation$EligibilityOverviews$Staging %>%
-                select(-ends_with("_Proportional")) %>%
-                pivot_longer(cols = c(Raw, Harmonized, Recoded, Final),
-                             names_to = "Stage",
-                             values_to = "Count") %>%
-                pivot_wider(names_from = "Eligibility",
-                            values_from = "Count") %>%
-                nest(.by = Feature)      # 'Split' the whole table into smaller data frames for each 'Feature' value
-
-
-library(plotly)
-
-plot_ly(data = filter(PlotData, Feature == "UICCStage")$data[[1]],
-        x = ~Stage,
-        y = ~Eligible,
-        type = "bar",
-        name = "Eligible",
-        color = I(dsCCPhosClient::CCPhosColors$Green)) %>%
-    add_trace(y = ~Ineligible,
-              name = "Ineligible",
-              color = I(dsCCPhosClient::CCPhosColors$Red)) %>%
-    add_trace(y = ~Missing,
-              name = "Missing",
-              color = I(dsCCPhosClient::CCPhosColors$MediumGrey)) %>%
-    layout(xaxis = list(categoryorder = "array",
-                        categoryarray = c("Raw", "Harmonized", "Recoded", "Final")),
-           yaxis = list(title = "Count"),
-           barmode = "stack")
-
-
+CurationReport <- ds.GetCurationReport(Module = "P21")
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Transform Curated Data Set (CDS) into Augmented Data Set (ADS)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Run ds.AugmentData
-ds.AugmentData(CuratedDataSetName = "CuratedDataSet",
-               OutputName = "AugmentationOutput")
+ds.P21.AugmentData(CuratedDataSetName = "P21.CuratedDataSet",
+                   OutputName = "P21.AugmentationOutput")
 
 ADSTableCheck <- ds.GetDataSetCheck(DataSetName = "AugmentedDataSet")
 
