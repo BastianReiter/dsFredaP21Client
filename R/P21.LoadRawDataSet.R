@@ -67,7 +67,7 @@ P21.LoadRawDataSet <- function(ServerSpecifications = NULL,
   for (i in 1:length(ServerNames))
   {
       # Create data.frame containing mapping from resource names to R object names
-      ResourcesToR <- ResourceAvailability$Resources.Available %>%
+      ResourcesToR <- ResourceAvailability$Resources.Required %>%
                           filter(Server == ServerNames[i],
                                  IsAvailable == TRUE,
                                  IsRequired == TRUE) %>%
