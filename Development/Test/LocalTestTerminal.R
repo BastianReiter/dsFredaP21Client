@@ -84,7 +84,6 @@ CCPConnections <- dsCCPhosClient::ConnectToVirtualCCP(CCPTestData = TestData,
                                                                        ICD = Resource.ICD.csv,
                                                                        OPS = Resource.OPS.csv))
 
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Check server requirements using dsCCPhosClient::CheckServerRequirements()
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -100,14 +99,14 @@ P21.LoadRawDataSet(ServerSpecifications = NULL)
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Prior to Data Curation harmonize feature names in RDS
+# Prepare RDS prior to Data Curation
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ds.PrepareRawData(RawDataSetName = "P21.RawDataSet",
                   Module = "P21",
+                  RDSTableNames = dsFredaP21Client::Meta.Tables$TableName.Curated,
                   FeatureNameDictionary = list(Department = c(FAB = "Fachabteilung")),
-                  CompleteCharacterConversion = TRUE,
-                  RDSTableNames = dsFredaP21Client::Meta.Tables$TableName.Curated)
+                  CompleteCharacterConversion = TRUE)
 
 
 TestRDS <- DSLite::getDSLiteData(conns = CCPConnections,
