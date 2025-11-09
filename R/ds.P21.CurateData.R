@@ -110,8 +110,8 @@ ds.P21.CurateData <- function(RawDataSetName = "P21.RawDataSet",
   Messages$CurationCompletion <- list()
 
 
-  # 1) Trigger dsFredaP21::CurateDataDS()
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Trigger dsFredaP21::CurateDataDS()
+#-------------------------------------------------------------------------------
 
   # Execute the server-side function call
   DSI::datashield.assign(conns = DSConnections,
@@ -129,8 +129,8 @@ ds.P21.CurateData <- function(RawDataSetName = "P21.RawDataSet",
   }
 
 
-  # 2) Extract objects from list returned by CurateDataDS() and assign them to R server sessions
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Extract objects from list returned by CurateDataDS() and assign them to R server sessions
+#-------------------------------------------------------------------------------
 
   # Named vector determining how objects inside CurationOutput list created on servers should be extracted
   ObjectNames <- setNames(c("P21.CuratedDataSet",
@@ -145,7 +145,7 @@ ds.P21.CurateData <- function(RawDataSetName = "P21.RawDataSet",
   {
       # Execute server-side list extraction
       DSI::datashield.assign(conns = DSConnections,
-                             symbol = ObjectNames[i],
+                             symbol = unname(ObjectNames[i]),
                              value = call("ExtractFromListDS",
                                            ListName.S = OutputName,
                                            ObjectName.S = names(ObjectNames)[i]))
@@ -154,12 +154,14 @@ ds.P21.CurateData <- function(RawDataSetName = "P21.RawDataSet",
       {
           # Call helper function to check if object assignment succeeded
           Messages$Assignment <- c(Messages$Assignment,
-                                   ds.GetObjectStatus(ObjectName = ObjectNames[i],
+                                   ds.GetObjectStatus(ObjectName = unname(ObjectNames[i]),
                                                       DSConnections = DSConnections))
       }
   }
 
-  # Optionally unpack (unlist) CuratedDataSet
+
+# Optionally unpack (unlist) CuratedDataSet
+#-------------------------------------------------------------------------------
   if (UnpackCuratedDataSet == TRUE)
   {
       # Get curated table names
@@ -195,9 +197,8 @@ ds.P21.CurateData <- function(RawDataSetName = "P21.RawDataSet",
   }
 
 
-
-  # 3) Get Messages object from servers (as a list of lists) and create completion check object
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Get Messages object from servers (as a list of lists) and create completion check object
+#-------------------------------------------------------------------------------
 
   CurationMessages <- DSI::datashield.aggregate(conns = DSConnections,
                                                 expr = call("GetReportingObjectDS",
@@ -231,8 +232,8 @@ ds.P21.CurateData <- function(RawDataSetName = "P21.RawDataSet",
                                    Messages$CurationCompletion)
 
 
-  # Print messages and return output
-  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Print messages and return output
+#-------------------------------------------------------------------------------
 
   # Print messages on console
   PrintMessages(Messages)

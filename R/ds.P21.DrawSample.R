@@ -1,7 +1,7 @@
 
 #' ds.P21.DrawSample
 #'
-#' `r lifecycle::badge("stable")` \cr\cr
+#' `r lifecycle::badge("experimental")` \cr\cr
 #' Draw a random sample from Raw Data Set
 #'
 #' Linked to server-side ASSIGN method \code{DrawSampleDS()}

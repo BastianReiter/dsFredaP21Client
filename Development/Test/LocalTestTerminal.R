@@ -98,15 +98,23 @@ dsCCPhosClient::CheckServerRequirements()
 P21.LoadRawDataSet(ServerSpecifications = NULL)
 
 
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Prepare RDS prior to Data Curation
-#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 ds.PrepareRawData(RawDataSetName = "P21.RawDataSet",
                   Module = "P21",
                   RDSTableNames = dsFredaP21Client::Meta.Tables$TableName.Curated,
-                  FeatureNameDictionary = list(Department = c(FAB = "Fachabteilung")),
-                  CompleteCharacterConversion = TRUE)
+                  FeatureNameDictionary = list(Case = c("Aufnahmegrund" = NA,      # Fix termini that could otherwise be falsely classified by Fuzzy String Matching
+                                                        "Geburtsmonat" = NA),
+                                               DiagnosisICD = c("icd_lokalisation" = "Lokalisation",
+                                                                "diagnosensicherheit" = NA),
+                                               Department = c(FAB = "Fachabteilung")),
+                  AddIDFeature = list(Do = TRUE,
+                                      IDFeatureName = "ID",
+                                      OverwriteExistingIDFeature = FALSE),
+                  RunFuzzyStringMatching = TRUE,
+                  FSMSettings = list(PreferredMethod = "jw",
+                                     Tolerance = 0.2),
+                  CompleteCharacterConversion = TRUE,
+                  CurateFeatureNames = TRUE)
+
 
 
 TestRDS <- DSLite::getDSLiteData(conns = CCPConnections,
@@ -150,6 +158,14 @@ CurationReport <- ds.GetCurationReport(Module = "P21")
 # Transform Curated Data Set (CDS) into Augmented Data Set (ADS)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# Test Comorbidity Assessment only
+ds.P21.AssessComorbidity(DiagnosisData = "P21.CDS.DiagnosisICD",
+                         DiagnosticCodeFeature = "ICD10Code",
+                         IDFeature = "CaseID",
+                         IgnoredCategories = c("canc", "metacanc"))
+
+
+
 # Run ds.AugmentData
 ds.P21.AugmentData(CuratedDataSetName = "P21.CuratedDataSet",
                    OutputName = "P21.AugmentationOutput")
@@ -165,8 +181,10 @@ ADSTableCheck <- ds.GetDataSetCheck(DataSetName = "AugmentedDataSet")
 # - Using dsCCPhosClient::GetServerWorkspaceInfo() and dsCCPhosClient::ds.GetObjectMetaData()
 #-------------------------------------------------------------------------------
 
+CCPConnectionsW <- CCPConnections["ServerA"]
+
 # Collect comprehensive information about all workspace objects
-ServerWorkspaceInfo <- GetServerWorkspaceInfo()
+ServerWorkspaceInfo <- GetServerWorkspaceInfo(DSConnections = CCPConnectionsW)
 
 # Overview of all objects in server R sessions
 View(ServerWorkspaceInfo$Overview)
