@@ -84,6 +84,8 @@ CCPConnections <- dsCCPhosClient::ConnectToVirtualCCP(CCPTestData = TestData,
                                                                        ICD = Resource.ICD.csv,
                                                                        OPS = Resource.OPS.csv))
 
+dsCCPhosClient::QuickProcessingRun()
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Check server requirements using dsCCPhosClient::CheckServerRequirements()
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -115,10 +117,6 @@ ds.PrepareRawData(RawDataSetName = "P21.RawDataSet",
                   CompleteCharacterConversion = TRUE,
                   CurateFeatureNames = TRUE)
 
-
-
-TestRDS <- DSLite::getDSLiteData(conns = CCPConnections,
-                                 symbol = "P21.RawDataSet")
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Check RDS tables for existence and completeness
@@ -155,22 +153,55 @@ CDSTableCheck <- ds.GetDataSetCheck(DataSetName = "P21.CuratedDataSet",
 CurationReport <- ds.GetCurationReport(Module = "P21")
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Transform Curated Data Set (CDS) into Augmented Data Set (ADS)
+# Further Processing of P21 data
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Test Comorbidity Assessment only
+# Trigger server-side ASSIGN function 'P21.LinkToCCPDS'
+# This creates a data.frame on servers that maps all CCP DiagnosisIDs to a reference P21 CaseID if possible
+DSI::datashield.assign(conns = CCPConnections,
+                       symbol = "CCP.P21.Link",
+                       value = call("P21.LinkToCCPDS",
+                                     P21CDSName.S = "P21.CuratedDataSet",
+                                     CCPADSName.S = "CCP.AugmentedDataSet",
+                                     Tolerance.DischargeToDiagnosis.S = 30,
+                                     Tolerance.DiagnosisToAdmission.S = 30))
+
+
+# Create data.frame on servers containing info on (Co)morbidity Assessment
 ds.P21.AssessComorbidity(DiagnosisData = "P21.CDS.DiagnosisICD",
                          DiagnosticCodeFeature = "ICD10Code",
                          IDFeature = "CaseID",
-                         IgnoredCategories = c("canc", "metacanc"))
+                         Arg.map = "elixhauser_icd10_quan",
+                         Arg.weights = "vw",
+                         OutputName = "P21.Comorbidity")
+                         #IgnoredCategories = c("canc", "metacanc"))
+
+
+# Attach 'PatientID' from 'P21.CDS.Case' to 'P21.Comorbidity'
+ds.JoinTables(TableNameA = "P21.Comorbidity",
+              TableNameB = "P21.CDS.Case",
+              ByStatement = "CaseID",
+              OutputName = "P21.Comorbidity")
+
+# Link CCP Diagnosis ID with P21 case-specific comorbidity assessment
+ds.JoinTables(TableNameA = "CCP.P21.Link",
+              TableNameB = "P21.Comorbidity",
+              ByStatement = "PatientID, ReferenceP21CaseID == CaseID",
+              OutputName = "CCP.Comorbidity")
+
+# Add comorbidity assessment to 'CCP.ADS.Diagnosis'
+ds.JoinTables(TableNameA = "CCP.ADS.Diagnosis",
+              TableNameB = "CCP.Comorbidity",
+              ByStatement = "PatientID, DiagnosisID",
+              OutputName = "CCP.ADS.Diagnosis")
 
 
 
 # Run ds.AugmentData
-ds.P21.AugmentData(CuratedDataSetName = "P21.CuratedDataSet",
-                   OutputName = "P21.AugmentationOutput")
-
-ADSTableCheck <- ds.GetDataSetCheck(DataSetName = "AugmentedDataSet")
+# ds.P21.AugmentData(CuratedDataSetName = "P21.CuratedDataSet",
+#                    OutputName = "P21.AugmentationOutput")
+#
+# ADSTableCheck <- ds.GetDataSetCheck(DataSetName = "AugmentedDataSet")
 
 
 
@@ -180,8 +211,6 @@ ADSTableCheck <- ds.GetDataSetCheck(DataSetName = "AugmentedDataSet")
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # - Using dsCCPhosClient::GetServerWorkspaceInfo() and dsCCPhosClient::ds.GetObjectMetaData()
 #-------------------------------------------------------------------------------
-
-CCPConnectionsW <- CCPConnections["ServerA"]
 
 # Collect comprehensive information about all workspace objects
 ServerWorkspaceInfo <- GetServerWorkspaceInfo(DSConnections = CCPConnectionsW)
