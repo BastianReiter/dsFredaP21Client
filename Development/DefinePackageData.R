@@ -7,32 +7,42 @@ library(usethis)
 # Meta Data transported from dsFredaP21 package
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Meta.ADS <- dsFredaP21::Meta.ADS
 Meta.Tables <- dsFredaP21::Meta.Tables
 Meta.Features <- dsFredaP21::Meta.Features
 Meta.Values <- dsFredaP21::Meta.Values
-Set.DataHarmonization <- dsFredaP21::Set.DataHarmonization
+Set.CurationProcess <- dsFredaP21::Set.CurationProcess
+Set.DataRemediation <- dsFredaP21::Set.DataRemediation
 Set.Dictionary <- dsFredaP21::Set.Dictionary
-Set.FeatureObligations <- dsFredaP21::Set.FeatureObligations
+Set.FeatureRequirements <- dsFredaP21::Set.FeatureRequirements
 Set.FeatureTracking <- dsFredaP21::Set.FeatureTracking
 Set.FuzzyStringMatching <- dsFredaP21::Set.FuzzyStringMatching
+Set.PrimaryTableCleaning <- dsFredaP21::Set.PrimaryTableCleaning
+Set.RecordSubsumption <- dsFredaP21::Set.RecordSubsumption
+Set.SecondaryTableCleaning <- dsFredaP21::Set.SecondaryTableCleaning
 Set.TransformativeExpressions <- dsFredaP21::Set.TransformativeExpressions
 
 
+use_data(Meta.ADS, overwrite = TRUE)
 use_data(Meta.Tables, overwrite = TRUE)
 use_data(Meta.Features, overwrite = TRUE)
 use_data(Meta.Values, overwrite = TRUE)
-use_data(Set.DataHarmonization, overwrite = TRUE)
+use_data(Set.CurationProcess, overwrite = TRUE)
+use_data(Set.DataRemediation, overwrite = TRUE)
+use_data(Set.DiagnosisAssociation, overwrite = TRUE)
+use_data(Set.DiagnosisRedundancy, overwrite = TRUE)
 use_data(Set.Dictionary, overwrite = TRUE)
-use_data(Set.FeatureObligations, overwrite = TRUE)
+use_data(Set.FeatureRequirements, overwrite = TRUE)
 use_data(Set.FeatureTracking, overwrite = TRUE)
 use_data(Set.FuzzyStringMatching, overwrite = TRUE)
+use_data(Set.PrimaryTableCleaning, overwrite = TRUE)
+use_data(Set.RecordSubsumption, overwrite = TRUE)
+use_data(Set.SecondaryTableCleaning, overwrite = TRUE)
 use_data(Set.TransformativeExpressions, overwrite = TRUE)
 
 
-
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Meta Data: Define server requirements that are checked before running of CCPhos functions
+# Meta Data: Define server requirements that are checked before running of FredaP21 functions
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Set.ServerRequirements <- list(#--- Data frame containing names of required packages ---

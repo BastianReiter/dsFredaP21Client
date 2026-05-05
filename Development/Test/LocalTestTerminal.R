@@ -36,7 +36,7 @@
 library(dplyr)
 library(dsBaseClient)
 library(dsFredaP21Client)
-# library(dsFredaClient)
+library(dsFredaClient)
 # library(dsTidyverseClient)
 library(purrr)
 library(resourcer)
@@ -76,7 +76,7 @@ Resource.OPS.csv <- resourcer::newResource(name = "Resource.OPS.csv",
 
 CCPConnections <- dsCCPhosClient::ConnectToVirtualCCP(CCPTestData = TestData,
                                                       NumberOfServers = 3,
-                                                      NumberOfPatientsPerServer = 2000,
+                                                      NumberOfPatientsPerServer = 1000,
                                                       AddedDsPackages = c("dsTidyverse",
                                                                           "dsFredaP21"),
                                                       Resources = list(FAB = Resource.FAB.csv,
@@ -84,7 +84,7 @@ CCPConnections <- dsCCPhosClient::ConnectToVirtualCCP(CCPTestData = TestData,
                                                                        ICD = Resource.ICD.csv,
                                                                        OPS = Resource.OPS.csv))
 
-dsCCPhosClient::QuickProcessingRun()
+dsCCPhosClient::CCP.QuickProcessingRun()
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Check server requirements using dsCCPhosClient::CheckServerRequirements()
@@ -100,22 +100,23 @@ dsCCPhosClient::CheckServerRequirements()
 P21.LoadRawDataSet(ServerSpecifications = NULL)
 
 
-ds.PrepareRawData(RawDataSetName = "P21.RawDataSet",
-                  Module = "P21",
-                  RDSTableNames = dsFredaP21Client::Meta.Tables$TableName.Curated,
-                  FeatureNameDictionary = list(Case = c("Aufnahmegrund" = NA,      # Fix termini that could otherwise be falsely classified by Fuzzy String Matching
-                                                        "Geburtsmonat" = NA),
-                                               DiagnosisICD = c("icd_lokalisation" = "Lokalisation",
-                                                                "diagnosensicherheit" = NA),
-                                               Department = c(FAB = "Fachabteilung")),
-                  AddIDFeature = list(Do = TRUE,
-                                      IDFeatureName = "ID",
-                                      OverwriteExistingIDFeature = FALSE),
-                  RunFuzzyStringMatching = TRUE,
-                  FSMSettings = list(PreferredMethod = "jw",
-                                     Tolerance = 0.2),
-                  CompleteCharacterConversion = TRUE,
-                  CurateFeatureNames = TRUE)
+dsFredaClient::ds.PrepareRawData(RawDataSetName = "P21.RawDataSet",
+                                 Module = "P21",
+                                 RDSTableNames = dsFredaP21Client::Meta.Tables$TableName.Curated,
+                                 FeatureNames.Dictionary = list(Case = c("Aufnahmegrund" = NA,      # Fix termini that could otherwise be falsely classified by Fuzzy String Matching
+                                                                         "Geburtsmonat" = NA),
+                                                                DiagnosisICD = c("icd_lokalisation" = "Lokalisation",
+                                                                                 "diagnosensicherheit" = NA),
+                                                                Department = c(FAB = "Fachabteilung")),
+                                 FeatureNames.FuzzyStringMatching.Run = TRUE,
+                                 FeatureNames.FuzzyStringMatching.PreferredMethod = "jw",
+                                 FeatureNames.FuzzyStringMatching.Tolerance = 0.2,
+                                 AddIDFeature.Do = TRUE,
+                                 AddIDFeature.IDFeatureName = "ID",
+                                 AddIDFeature.OverwriteExistingIDFeature = FALSE,
+                                 Conversion.IntoCharacter = "All",
+                                 Conversion.DateIntoPOSIXct = list(.All = c("%Y%m%d%H%M", "%Y%m%d", "%Y-%m-%d")),
+                                 CurateFeatureNames = TRUE)
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -141,9 +142,9 @@ ds.P21.DrawSample(RawDataSetName = "P21.RawDataSet",
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Transform Raw Data Set (RDS) into Curated Data Set (CDS) (using default settings)
-ds.P21.CurateData(RawDataSetName = "P21.RawDataSet",
-                  Settings = NULL,
-                  OutputName = "P21.CurationOutput")
+dsFredaClient::ds.CurateData(RawDataSetName = "P21.RawDataSet",
+                             Module = "P21",
+                             OutputName = "P21.CurationOutput")
 
 CDSTableCheck <- ds.GetDataSetCheck(DataSetName = "P21.CuratedDataSet",
                                     Modul = "P21",
@@ -151,6 +152,9 @@ CDSTableCheck <- ds.GetDataSetCheck(DataSetName = "P21.CuratedDataSet",
 
 # Get curation reports
 CurationReport <- ds.GetCurationReport(Module = "P21")
+
+FredaGUI::Widget.CurationReport(Module = "P21",
+                                CurationReport = CurationReport)
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Further Processing of P21 data
@@ -195,6 +199,11 @@ ds.JoinTables(TableNameA = "CCP.ADS.Diagnosis",
               ByStatement = "PatientID, DiagnosisID",
               OutputName = "CCP.ADS.Diagnosis")
 
+
+
+
+ds.GetSampleStatistics(TableName = "CCP.ADS.Diagnosis",
+                       FeatureName = "ComorbidityScore")
 
 
 # Run ds.AugmentData

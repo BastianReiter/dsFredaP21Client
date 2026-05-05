@@ -6,16 +6,19 @@
 \usage{
 ds.P21.GetCohortDescription(
   DataSetName = "P21.AugmentedDataSet",
-  Stage.S = "Augmented",
-  DSConnections = NULL
+  Stage = "Augmented",
+  DSConnections = NULL,
+  DS.async = FALSE
 )
 }
 \arguments{
 \item{DataSetName}{\code{string} - Name of Data Set object (list) on server, usually "RawDataSet", "CuratedDataSet" or "AugmentedDataSet" - Default: "AugmentedDataSet"}
 
+\item{Stage}{\code{string} - Indicating the transformation stage of the described data set, one of "Raw" / "Curated" / "Augmented" - Default: "Augmented"}
+
 \item{DSConnections}{\code{list} of \code{DSConnection} objects. This argument may be omitted if such an object is already uniquely specified in the global environment.}
 
-\item{Stage}{\code{string} - Indicating the transformation stage of the described data set, one of "Raw" / "Curated" / "Augmented" - Default: "Augmented"}
+\item{DS.async}{\code{logical} - Value of argument 'async' in \code{DSI::datashield.assign()} / \code{DSI::datashield.aggregate()} - Default: \code{FALSE}}
 }
 \value{
 A \code{list} containing descriptive statistics characterizing patient cohort:

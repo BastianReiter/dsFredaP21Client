@@ -17,6 +17,7 @@
 #' @param Arg.weights \code{string} - The value for argument 'weights' in \code{comorbidity::score()}
 #' @param OutputName \code{string} - Assigned name of the server-side returned \code{data.frame}
 #' @param DSConnections \code{list} of \code{DSConnection} objects. This argument may be omitted if such an object is already uniquely specified in the global environment.
+#' @param DS.async \code{logical} - Value of argument 'async' in \code{DSI::datashield.assign()} / \code{DSI::datashield.aggregate()} - Default: \code{FALSE}
 #'
 #' @return A \code{list} of messages about object assignment for monitoring purposes
 #'
@@ -34,7 +35,8 @@ ds.P21.AssessComorbidity <- function(DiagnosisData,
                                      Arg.assign0 = TRUE,
                                      Arg.weights = "quan",
                                      OutputName = "P21.Comorbidity",
-                                     DSConnections = NULL)
+                                     DSConnections = NULL,
+                                     DS.async = FALSE)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {
   # --- Argument Validation ---
@@ -46,7 +48,8 @@ ds.P21.AssessComorbidity <- function(DiagnosisData,
               is.string(Arg.map),
               is.flag(Arg.assign0),
               is.string(Arg.weights),
-              is.string(OutputName))
+              is.string(OutputName),
+              is.flag(DS.async))
   if (!is.null(IgnoredCategories)) { assert_that(is.character(IgnoredCategories)) }
 
   # Special validation rules implemented with base::stopifnot() instead of assertthat::assert_that()
@@ -70,11 +73,13 @@ ds.P21.AssessComorbidity <- function(DiagnosisData,
                                       ScoreFeatureName.S = ScoreFeatureName,
                                       Arg.map.S = Arg.map,
                                       Arg.assign0.S = Arg.assign0,
-                                      Arg.weights.S = Arg.weights))
+                                      Arg.weights.S = Arg.weights),
+                         async = DS.async)
 
   # Call helper function to check if object assignment succeeded
   AssignmentInfo <- ds.GetObjectStatus(OutputName,
-                                       DSConnections = DSConnections)
+                                       DSConnections = DSConnections,
+                                       DS.async = DS.async)
 
 #--- Print and invisibly return Messages ---------------------------------------
 

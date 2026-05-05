@@ -9,6 +9,8 @@ GetObjectList <- c("CCP.ADS.Patient",
                    "CCP.ADS.Diagnosis",
                    "P21.CDS.Case",
                    "P21.Comorbidity")
+                   #"P21.CuratedDataSet",
+                   #"CCP.AugmentedDataSet")
 
 for (objectname in GetObjectList)
 {
@@ -27,7 +29,7 @@ P21.Comorbidity <- P21.Comorbidity %>%
 
 
 PatIDMapping <- CCP.ADS.Patient$PatientID %>%
-                    setNames(P21.Comorbidity$PatientID[sample(1:40000, size = 96)])
+                    setNames(P21.Comorbidity$PatientID[sample(1:40000, size = length(.))])
 
 
 P21.Comorbidity.Fake <- P21.Comorbidity %>%
@@ -81,4 +83,5 @@ Test <- Mapping %>%
             left_join(P21.Comorbidity.Fake, by = join_by(PatientID,
                                                          ReferenceP21CaseID == CaseID))
 
-
+class(Mapping$ReferenceP21CaseID)
+class(P21.Comorbidity.Fake$CaseID)
