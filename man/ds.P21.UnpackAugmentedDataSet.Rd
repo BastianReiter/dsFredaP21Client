@@ -6,13 +6,16 @@
 \usage{
 ds.P21.UnpackAugmentedDataSet(
   AugmentedDataSetName = "P21.AugmentedDataSet",
-  DSConnections = NULL
+  DSConnections = NULL,
+  DS.async = FALSE
 )
 }
 \arguments{
 \item{AugmentedDataSetName}{\code{string} - Name of Augmented Data Set object (\code{list}) on server - Default: 'AugmentedDataSet'}
 
 \item{DSConnections}{\code{list} of \code{DSConnection} objects. This argument may be omitted if such an object is already uniquely specified in the global environment.}
+
+\item{DS.async}{\code{logical} - Value of argument 'async' in \code{DSI::datashield.assign()} / \code{DSI::datashield.aggregate()} - Default: \code{FALSE}}
 }
 \value{
 A \code{list} of messages about object assignment for monitoring purposes

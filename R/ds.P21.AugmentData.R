@@ -11,6 +11,7 @@
 #' @param RunAssignmentChecks \code{logical} Indicating whether assignment checks should be performed or omitted for reduced execution time - Default: \code{TRUE}
 #' @param UnpackAugmentedDataSet \code{logical} indicating whether the Augmented Data Set \code{list} should be unpacked so that tables \code{data.frames} are directly accessible - Default: \code{TRUE}
 #' @param DSConnections \code{list} of \code{DSConnection} objects. This argument may be omitted if such an object is already uniquely specified in the global environment.
+#' @param DS.async \code{logical} - Value of argument 'async' in \code{DSI::datashield.assign()} / \code{DSI::datashield.aggregate()} - Default: \code{FALSE}
 #'
 #' @return A \code{list} of variables containing messages about object assignment for monitoring purposes.
 #'
@@ -22,7 +23,8 @@ ds.P21.AugmentData <- function(CuratedDataSetName = "P21.CuratedDataSet",
                                OutputName = "P21.AugmentationOutput",
                                RunAssignmentChecks = TRUE,
                                UnpackAugmentedDataSet = TRUE,
-                               DSConnections = NULL)
+                               DSConnections = NULL,
+                               DS.async = FALSE)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {
   # --- For Testing Purposes ---
@@ -31,8 +33,14 @@ ds.P21.AugmentData <- function(CuratedDataSetName = "P21.CuratedDataSet",
   # RunAssignmentChecks <- TRUE
   # UnpackAugmentedDataSet <- TRUE
   # DSConnections <- CCPConnections
+  # DS.async <- FALSE
 
   # --- Argument Validation ---
+  assert_that(is.string(CuratedDataSetName),
+              is.string(OutputName),
+              is.flag(RunAssignmentChecks),
+              is.flag(UnpackAugmentedDataSet),
+              is.flag(DS.async))
 
   # Check validity of 'DSConnections' or find them programmatically if none are passed
   DSConnections <- CheckDSConnections(DSConnections)
@@ -45,21 +53,23 @@ ds.P21.AugmentData <- function(CuratedDataSetName = "P21.CuratedDataSet",
   Messages$AugmentationCompletion <- list()
 
 
-# Trigger dsFredaP21::AugmentDataDS()
+# Trigger dsFredaP21::P21.AugmentDataDS()
 #-------------------------------------------------------------------------------
 
   # Execute the server-side function call
   DSI::datashield.assign(conns = DSConnections,
                          symbol = OutputName,
                          value = call("P21.AugmentDataDS",
-                                      CuratedDataSetName.S = CuratedDataSetName))
+                                      CuratedDataSetName.S = CuratedDataSetName),
+                         async = DS.async)
 
   if (RunAssignmentChecks == TRUE)
   {
       # Call helper function to check if assignment of AugmentationOutput succeeded
       Messages$Assignment <- c(Messages$Assignment,
                                ds.GetObjectStatus(ObjectName = OutputName,
-                                                  DSConnections = DSConnections))
+                                                  DSConnections = DSConnections,
+                                                  DS.async = DS.async))
   }
 
 
@@ -78,14 +88,16 @@ ds.P21.AugmentData <- function(CuratedDataSetName = "P21.CuratedDataSet",
                              symbol = unname(AugmentationOutputObjects[i]),
                              value = call("ExtractFromListDS",
                                           ListName.S = OutputName,
-                                          ObjectName.S = AugmentationOutputObjects[i]))
+                                          ObjectName.S = AugmentationOutputObjects[i]),
+                             async = DS.async)
 
       if (RunAssignmentChecks == TRUE)
       {
           # Call helper function to check if object assignment succeeded
           Messages$Assignment <- c(Messages$Assignment,
                                    ds.GetObjectStatus(ObjectName = unname(AugmentationOutputObjects[i]),
-                                                      DSConnections = DSConnections))
+                                                      DSConnections = DSConnections,
+                                                      DS.async = DS.async))
       }
   }
 
@@ -109,14 +121,16 @@ ds.P21.AugmentData <- function(CuratedDataSetName = "P21.CuratedDataSet",
                                  symbol = paste0("P21.ADS.", P21TableNames.ADS[i]),      # E.g. 'ADS.Events'
                                  value = call("ExtractFromListDS",
                                               ListName.S = "P21.AugmentedDataSet",
-                                              ObjectName.S = P21TableNames.ADS[i]))
+                                              ObjectName.S = P21TableNames.ADS[i]),
+                                 async = DS.async)
 
           if (RunAssignmentChecks == TRUE)
           {
               # Call helper function to check if object assignment succeeded
               Messages$Assignment <- c(Messages$Assignment,
                                        ds.GetObjectStatus(ObjectName = paste0("P21.ADS.", P21TableNames.ADS[i]),
-                                                          DSConnections = DSConnections))
+                                                          DSConnections = DSConnections,
+                                                          DS.async = DS.async))
           }
       }
   }
@@ -137,7 +151,8 @@ ds.P21.AugmentData <- function(CuratedDataSetName = "P21.CuratedDataSet",
 
   Messages <- DSI::datashield.aggregate(conns = DSConnections,
                                         expr = call("GetReportingObjectDS",
-                                                    ObjectName.S = "Messages"))
+                                                    ObjectName.S = "Messages"),
+                                        async = DS.async)
 
   # Create table object for output
   AugmentationCompletionCheck <- Messages %>%

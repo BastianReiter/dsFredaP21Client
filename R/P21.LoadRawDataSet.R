@@ -9,6 +9,7 @@
 #' @param ResourceNames.Dictionary Optional \code{list} of named \code{character vectors} - To enable server-specific mapping of deviating to required resource names. Names of list elements must match server names. For rules that should be applied on all servers, choose form \code{list(All = c('LookupName' = 'RequiredName'))}.
 #' @param RunAssignmentChecks \code{logical} Indicating whether assignment checks should be performed or omitted for reduced execution time - Default: \code{TRUE}
 #' @param DSConnections \code{list} of \code{DSConnection} objects. This argument may be omitted if such an object is already uniquely specified in the global environment.
+#' @param DS.async \code{logical} - Value of argument 'async' in \code{DSI::datashield.assign()} / \code{DSI::datashield.aggregate()} - Default: \code{FALSE}
 #'
 #' @return A \code{list} of messages
 #'
@@ -20,7 +21,8 @@ P21.LoadRawDataSet <- function(ServerSpecifications = NULL,
                                ResourceNames.Mapping = setNames(dsFredaP21Client::Meta.Tables$TableName.Curated, nm = dsFredaP21Client::Meta.Tables$TableName.Raw),
                                ResourceNames.Dictionary = NULL,
                                RunAssignmentChecks = TRUE,
-                               DSConnections = NULL)
+                               DSConnections = NULL,
+                               DS.async = FALSE)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {
   # --- For Testing Purposes ---
@@ -31,10 +33,12 @@ P21.LoadRawDataSet <- function(ServerSpecifications = NULL,
   #                             ServerB = c(opsc = "OPS"))
   # RunAssignmentChecks <- TRUE
   # DSConnections <- CCPConnections
+  # DS.async <- FALSE
 
   # --- Argument Validation ---
   assert_that(is.character(ResourceNames.Mapping),
-              is.flag(RunAssignmentChecks))
+              is.flag(RunAssignmentChecks),
+              is.flag(DS.async))
   if (!is.null(ServerSpecifications)) { assert_that(is.data.frame(ServerSpecifications)) }
   if (!is.null(ResourceNames.Dictionary)) { assert_that(is.list(ResourceNames.Dictionary)) }
 
@@ -87,14 +91,16 @@ P21.LoadRawDataSet <- function(ServerSpecifications = NULL,
           # Assign RessourceClient object on server
           DSI::datashield.assign.resource(conns = DSConnections[[i]],
                                           symbol = ResourceClientName,
-                                          resource = ResourcesToR$ResourceName[j])
+                                          resource = ResourcesToR$ResourceName[j],
+                                          async = DS.async)
 
           # The first step requires a suitable 'ResourceResolver' to be registered on the servers. For csv-files this is already given by loading the 'resourcer' package on the servers.
           # Then we can actually load the data of the resource into the server R session by calling 'as.resource.data.frame' on it
           DSI::datashield.assign.expr(conns = DSConnections[[i]],
                                       symbol = ResourcesToR$RTableName[j],
                                       expr = bquote(as.resource.data.frame(x = .(as.name(ResourceClientName)),      # Everything in '.(...)' gets evaluated before complete expression is created and passed
-                                                                           strict = 'TRUE')))
+                                                                           strict = 'TRUE')),
+                                      async = DS.async)
 
           # Add message about resource to R session mapping
           Messages$Assignment <- c(Messages$Assignment,
@@ -116,7 +122,8 @@ P21.LoadRawDataSet <- function(ServerSpecifications = NULL,
       {
           # Make sure assignment was successful on all servers
           ObjectStatus_Table <- ds.GetObjectStatus(ObjectName = paste0("P21.RDS.", tablename),
-                                                   DSConnections = DSConnections)
+                                                   DSConnections = DSConnections,
+                                                   DS.async = DS.async)
 
           # Add info about table assignment to Messages
           BundledMessages <- c(BundledMessages,
@@ -156,14 +163,16 @@ P21.LoadRawDataSet <- function(ServerSpecifications = NULL,
                       dsFredaClient::ds.MakeList(ObjectNames = setNames(object = RDSTableNames,
                                                                         nm = str_remove(RDSTableNames, "P21.RDS.")),
                                                  OutputName = "P21.RawDataSet",
-                                                 DSConnections = DSConnections[servername])
+                                                 DSConnections = DSConnections[servername],
+                                                 DS.async = DS.async)
                    })
 
   if (RunAssignmentChecks == TRUE)
   {
       # Make sure assignment of RawDataSet was successful on all servers
       ObjectStatus_RawDataSet <- ds.GetObjectStatus(ObjectName = "P21.RawDataSet",
-                                                    DSConnections = DSConnections)
+                                                    DSConnections = DSConnections,
+                                                    DS.async = DS.async)
 
       # Add info about RawDataSet assignment to Messages
       Messages$Assignment <- c(Messages$Assignment,

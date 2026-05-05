@@ -10,7 +10,8 @@ P21.LoadRawDataSet(
     dsFredaP21Client::Meta.Tables$TableName.Raw),
   ResourceNames.Dictionary = NULL,
   RunAssignmentChecks = TRUE,
-  DSConnections = NULL
+  DSConnections = NULL,
+  DS.async = FALSE
 )
 }
 \arguments{
@@ -23,6 +24,8 @@ P21.LoadRawDataSet(
 \item{RunAssignmentChecks}{\code{logical} Indicating whether assignment checks should be performed or omitted for reduced execution time - Default: \code{TRUE}}
 
 \item{DSConnections}{\code{list} of \code{DSConnection} objects. This argument may be omitted if such an object is already uniquely specified in the global environment.}
+
+\item{DS.async}{\code{logical} - Value of argument 'async' in \code{DSI::datashield.assign()} / \code{DSI::datashield.aggregate()} - Default: \code{FALSE}}
 }
 \value{
 A \code{list} of messages
