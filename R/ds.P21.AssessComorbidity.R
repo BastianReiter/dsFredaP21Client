@@ -17,7 +17,7 @@
 #' @param Arg.weights \code{string} - The value for argument 'weights' in \code{comorbidity::score()}
 #' @param OutputName \code{string} - Assigned name of the server-side returned \code{data.frame}
 #' @param DSConnections \code{list} of \code{DSConnection} objects. This argument may be omitted if such an object is already uniquely specified in the global environment.
-#' @param DS.async \code{logical} - Value of argument 'async' in \code{DSI::datashield.assign()} / \code{DSI::datashield.aggregate()} - Default: \code{FALSE}
+#' @param DS.async \code{logical} - Value of argument 'async' in \code{DSI::datashield.assign()} / \code{DSI::datashield.aggregate()} - Default: \code{dsFredaClient::Set.DSSettings$DS.async}
 #'
 #' @return A \code{list} of messages about object assignment for monitoring purposes
 #'
@@ -36,7 +36,7 @@ ds.P21.AssessComorbidity <- function(DiagnosisData,
                                      Arg.weights = "quan",
                                      OutputName = "P21.Comorbidity",
                                      DSConnections = NULL,
-                                     DS.async = FALSE)
+                                     DS.async = dsFredaClient::Set.DSSettings$DS.async)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 {
   # --- Argument Validation ---
