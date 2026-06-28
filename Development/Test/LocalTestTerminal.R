@@ -143,18 +143,13 @@ ds.P21.DrawSample(RawDataSetName = "P21.RawDataSet",
 
 # Transform Raw Data Set (RDS) into Curated Data Set (CDS) (using default settings)
 dsFredaClient::ds.CurateData(RawDataSetName = "P21.RawDataSet",
-                             Module = "P21",
-                             OutputName = "P21.CurationOutput")
+                             Module = "P21")
 
 CDSTableCheck <- ds.GetDataSetCheck(DataSetName = "P21.CuratedDataSet",
                                     Modul = "P21",
                                     Stage = "Curated")
 
-# Get curation reports
-CurationReport <- ds.GetCurationReport(Module = "P21")
-
-FredaGUI::Widget.CurationReport(Module = "P21",
-                                CurationReport = CurationReport)
+FredaGUI::Widget.CurationReport(Module = "P21")
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Further Processing of P21 data
@@ -205,6 +200,8 @@ ds.JoinTables(TableNameA = "CCP.ADS.Diagnosis",
 ds.GetSampleStatistics(TableName = "CCP.ADS.Diagnosis",
                        FeatureName = "ComorbidityScore")
 
+
+FredaGUI::Widget.ServerExplorer()
 
 # Run ds.AugmentData
 # ds.P21.AugmentData(CuratedDataSetName = "P21.CuratedDataSet",
